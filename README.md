@@ -1,5 +1,15 @@
 # [INSERT NAME HERE]
 
+[http://localhost:5115/swagger](http://localhost:5115/swagger)
+
+## Dependencies
+
+```bash
+dotnet add package Npgsql.EntityFrameworkCore.PostgreSQL
+dotnet add package Microsoft.EntityFrameworkCore.Design
+dotnet add package Microsoft.EntityFrameworkCore.Tools
+```
+
 Property Management System
 
 ## Task 1
