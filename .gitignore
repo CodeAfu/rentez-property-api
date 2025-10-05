@@ -289,3 +289,8 @@ __pycache__/
 *.xsd.cs
 
 backup.rar
+
+# appsettings files with secrets
+appsettings.Development.json
+appsettings.*.json
+appsettings.json
