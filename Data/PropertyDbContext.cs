@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using RentEZApi.Models;
+using RentEZApi.Models.Entities;
 
 namespace RentEZApi.Data;
 

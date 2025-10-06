@@ -9,11 +9,11 @@ using RentEZApi.Data;
 
 #nullable disable
 
-namespace api.Migrations
+namespace RentEZApi.Migrations
 {
     [DbContext(typeof(PropertyDbContext))]
-    [Migration("20251005083524_AddUpdatedAt")]
-    partial class AddUpdatedAt
+    [Migration("20251006115248_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -25,11 +25,12 @@ namespace api.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("RentEZApi.Models.User", b =>
+            modelBuilder.Entity("RentEZApi.Models.Entities.User", b =>
                 {
-                    b.Property<string>("Id")
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
                         .HasMaxLength(36)
-                        .HasColumnType("character varying(36)")
+                        .HasColumnType("uuid")
                         .HasColumnName("id");
 
                     b.Property<int>("Age")
@@ -77,6 +78,12 @@ namespace api.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)")
                         .HasColumnName("password_hash");
+
+                    b.Property<string>("PhoneNumber")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("phone_number");
 
                     b.Property<DateTime>("UpdatedAt")
                         .ValueGeneratedOnAdd()

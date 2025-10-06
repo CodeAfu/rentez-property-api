@@ -1,6 +1,42 @@
-@api_HostAddress = http://localhost:5115
-
-GET {{api_HostAddress}}/weatherforecast/
-Accept: application/json
+@host = http://localhost:5115
+@user = /api/user
 
 ###
+
+GET {{host}}/health-check
+
+###
+
+GET {{host}}{{user}}
+
+###
+
+GET {{host}}{{user}}/c3cea2f4-b3ad-4a87-83c8-8c181ef210ce
+
+###
+POST {{host}}{{user}}/
+Content-Type: application/json
+
+{
+  "firstName": "FirstName",
+  "lastName": "LastName",
+  "age": 30,
+  "phoneNumber": "+60123456789",
+  "occupation": "Student",
+  "ethnicity": "Asian",
+  "emailAddress": "example3@gmail.com",
+  "passwordHash": "ghsdkjfhdskfhskdfhisud432r8dhv&*HG87vhds"
+}
+
+###
+
+DELETE {{host}}{{user}}/ce9dc2e1-4d4b-47a8-bc8d-88577cfb4976
+
+###
+
+PUT {{host}}{{user}}/c3cea2f4-b3ad-4a87-83c8-8c181ef210ce
+Content-Type: application/json
+
+{
+  "lastName": "Guy"
+}

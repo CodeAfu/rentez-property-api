@@ -9,11 +9,11 @@ using RentEZApi.Data;
 
 #nullable disable
 
-namespace api.Migrations
+namespace RentEZApi.Migrations
 {
     [DbContext(typeof(PropertyDbContext))]
-    [Migration("20251005081934_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20251006115847_UserRemoveIdLength")]
+    partial class UserRemoveIdLength
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -25,11 +25,11 @@ namespace api.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("RentEZApi.Models.User", b =>
+            modelBuilder.Entity("RentEZApi.Models.Entities.User", b =>
                 {
-                    b.Property<string>("Id")
-                        .HasMaxLength(36)
-                        .HasColumnType("character varying(36)")
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
                         .HasColumnName("id");
 
                     b.Property<int>("Age")
@@ -37,8 +37,10 @@ namespace api.Migrations
                         .HasColumnName("age");
 
                     b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at");
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("NOW()");
 
                     b.Property<string>("EmailAddress")
                         .IsRequired()
@@ -75,6 +77,18 @@ namespace api.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)")
                         .HasColumnName("password_hash");
+
+                    b.Property<string>("PhoneNumber")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("phone_number");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at")
+                        .HasDefaultValueSql("NOW()");
 
                     b.HasKey("Id");
 

@@ -1,50 +1,55 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace RentEZApi.Models;
+namespace RentEZApi.Models.Entities;
 
 [Table("users")]
 public class User : IIdentifiable, ITimestampedEntity
 {
     [Key]
-    [MaxLength(36)]
     [Column("id")]
-    public string Id { get; set; } = Guid.NewGuid().ToString();
+    public Guid Id { get; set; } = Guid.NewGuid();
 
     [Required]
     [MaxLength(50)]
     [Column("first_name")]
-    public string FirstName { get; set; } = string.Empty;
+    public required string FirstName { get; set; }
 
     [Required]
     [MaxLength(50)]
     [Column("last_name")]
-    public string LastName { get; set; } = string.Empty;
+    public required string LastName { get; set; }
 
     [Required]
     [Range(18, 120)]
     [Column("age")]
-    public int Age { get; set; }
+    public required int Age { get; set; }
 
     [Required]
     [MaxLength(100)]
     [Column("occupation")]
-    public string Occupation { get; set; } = string.Empty;
+    public required string Occupation { get; set; }
+
+    [Required]
+    [MaxLength(30)]
+    [Column("phone_number")]
+    public required string PhoneNumber { get; set; }
 
     [Required]
     [MaxLength(50)]
     [Column("ethnicity")]
-    public string Ethnicity { get; set; } = string.Empty;
+    public required string Ethnicity { get; set; }
 
     [Required]
     [MaxLength(255)]
     [Column("email_address")]
-    public string EmailAddress { get; set; } = string.Empty;
+    public required string EmailAddress { get; set; }
 
     [Required]
+    [MinLength(8)]
     [MaxLength(255)]
     [Column("password_hash")]
-    public string PasswordHash { get; set; } = string.Empty;
+    public required string PasswordHash { get; set; }
 
     [Required]
     [Column("created_at")]

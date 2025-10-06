@@ -2,5 +2,5 @@ namespace RentEZApi.Models;
 
 public interface IIdentifiable
 {
-    string Id { get; set; }
+    Guid Id { get; set; }
 }

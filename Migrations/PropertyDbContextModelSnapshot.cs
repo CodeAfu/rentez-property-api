@@ -8,7 +8,7 @@ using RentEZApi.Data;
 
 #nullable disable
 
-namespace api.Migrations
+namespace RentEZApi.Migrations
 {
     [DbContext(typeof(PropertyDbContext))]
     partial class PropertyDbContextModelSnapshot : ModelSnapshot
@@ -22,11 +22,11 @@ namespace api.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("RentEZApi.Models.User", b =>
+            modelBuilder.Entity("RentEZApi.Models.Entities.User", b =>
                 {
-                    b.Property<string>("Id")
-                        .HasMaxLength(36)
-                        .HasColumnType("character varying(36)")
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
                         .HasColumnName("id");
 
                     b.Property<int>("Age")
@@ -74,6 +74,12 @@ namespace api.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)")
                         .HasColumnName("password_hash");
+
+                    b.Property<string>("PhoneNumber")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("phone_number");
 
                     b.Property<DateTime>("UpdatedAt")
                         .ValueGeneratedOnAdd()
