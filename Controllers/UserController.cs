@@ -1,22 +1,21 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using Models.DTOs;
-using RentEZApi.Data;
 using RentEZApi.Models.DTOs;
 using RentEZApi.Models.Entities;
 using RentEZApi.Models.Response;
+using RentEZApi.Services;
 
-namespace Controllers;
+namespace RentEZApi.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
 public class UserController : ControllerBase
 {
-    private readonly PropertyDbContext _dbContext;
+    private readonly UserService _userService;
 
-    public UserController(PropertyDbContext dbContext)
+    public UserController(UserService userService)
     {
-        _dbContext = dbContext;
+        _userService = userService;
     }
 
     [HttpGet]
@@ -27,104 +26,79 @@ public class UserController : ControllerBase
         if (environment != "Development")
         {
             return BadRequest(
-                ApiResponse.Fail("You do not have permission to access this endpoint")
+                ApiResponse.Fail("Invalid Permission", "You do not have permission to access this endpoint")
             );
         }
 
-        var users = await _dbContext.Users.ToListAsync();
+        var usersResult = await _userService.GetUsersAsync();
+
+        if (usersResult.Data == null) return UnknownError("usersResult Data is null");
 
         return Ok(
-            ApiResponse<List<User>>.FromData(users, $"{users.Count} Users found")
+            ApiResponse<List<User>>.FromData(usersResult.Data, usersResult.Message)
         );
     }
 
     [HttpGet("{id}")]
     public async Task<ActionResult> GetUser(Guid id)
     {
-        var user = await _dbContext.Users
-                .FirstOrDefaultAsync(u => u.Id == id);
+        var userResult = await _userService.GetUserAsync(id);
 
-        if (user == null)
+        if (userResult.Data == null)
             return NotFound(
-                ApiResponse.Fail($"User with id '{id}' not found.")
+                ApiResponse.Fail("User not found", $"User with id '{id}' not found.")
             );
 
-        return Ok(ApiResponse<User>.FromData(user, "User Found Successfully"));
+        return Ok(ApiResponse<User>.FromData(userResult.Data, userResult.Message));
     }
 
     [HttpPost]
-    public async Task<ActionResult> CreateUser(CreaterUserDto dto)
+    public async Task<ActionResult> CreateUser(CreaterUserDto request)
     {
         if (!ModelState.IsValid)
             return BadRequest(ApiResponse.Fail("Invalid input", ModelState.ToString()));
 
-        var user = new User
-        {
-            FirstName = dto.FirstName,
-            LastName = dto.LastName,
-            Age = dto.Age,
-            PhoneNumber = dto.PhoneNumber,
-            Occupation = dto.Occupation,
-            Ethnicity = dto.Ethnicity,
-            EmailAddress = dto.EmailAddress,
-            PasswordHash = dto.PasswordHash,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
-        };
+        var createUserResult = await _userService.CreateUserAsync(request);
 
-        await _dbContext.Users.AddAsync(user);
-        await _dbContext.SaveChangesAsync();
+        if (createUserResult.Error != null)
+            return Conflict(ApiResponse.Fail(createUserResult.Error, createUserResult.Message));
 
-        return CreatedAtAction(nameof(GetUser), new { id = user.Id },
-            ApiResponse<User>.FromData(user, "User created successfully"));
+        if (createUserResult.Data == null)
+            return UnknownError("User is null");
+
+        return Ok(ApiResponse<User>.FromData(createUserResult.Data, createUserResult.Message));
     }
 
     [HttpDelete("{id}")]
     public async Task<ActionResult> DeleteUser(Guid id)
     {
-        var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.Id == id);
+        var deleteUserResult = await _userService.DeleteUserAsync(id);
 
-        if (user == null)
-            return NotFound(ApiResponse.Fail($"User with id '{id}' not found"));
+        if (deleteUserResult.Error != null) 
+            return NotFound(ApiResponse.Fail(deleteUserResult.Error, deleteUserResult.Message));
 
-        _dbContext.Users.Remove(user);
-        await _dbContext.SaveChangesAsync();
+        if (deleteUserResult.Data == null) return UnknownError("User is null");
 
-        return Ok(ApiResponse<User>.FromData(user, $"User '{user.FirstName} {user.LastName}' deleted successfully"));
+        return Ok(ApiResponse<User>
+            .FromData(deleteUserResult.Data, deleteUserResult.Message));
     }
 
     [HttpPut("{id}")]
-    public async Task<ActionResult> EditUser(Guid id, EditUserDto dto)
+    public async Task<ActionResult> EditUser(Guid id, EditUserDto request)
     {
-        var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.Id == id);
+        var editUserResult = await _userService.EditUserAsync(id, request);
 
-        if (user == null)
-            return NotFound(ApiResponse.Fail($"User with id '{id}' not found"));
+        if (editUserResult.Error != null)
+            return NotFound(ApiResponse<User>.Fail(editUserResult.Error, editUserResult.Message));
 
-        // Update only non-null fields (partial update)
-        if (!string.IsNullOrWhiteSpace(dto.FirstName))
-            user.FirstName = dto.FirstName;
+        if (editUserResult.Data == null) return UnknownError("editUserResult Data is null");
 
-        if (!string.IsNullOrWhiteSpace(dto.LastName))
-            user.LastName = dto.LastName;
+        return Ok(ApiResponse<User>.FromData(editUserResult.Data, editUserResult.Message));
+    }
 
-        if (dto.Age > 0)
-            user.Age = dto.Age;
-
-        if (!string.IsNullOrWhiteSpace(dto.PhoneNumber))
-            user.PhoneNumber = dto.PhoneNumber;
-
-        if (!string.IsNullOrWhiteSpace(dto.Occupation))
-            user.Occupation = dto.Occupation;
-
-        if (!string.IsNullOrWhiteSpace(dto.Ethnicity))
-            user.Ethnicity = dto.Ethnicity;
-
-        user.UpdatedAt = DateTime.UtcNow;
-
-        _dbContext.Users.Update(user);
-        await _dbContext.SaveChangesAsync();
-
-        return Ok(ApiResponse<User>.FromData(user, "User updated successfully"));
+    private ActionResult UnknownError(string? message)
+    {
+        return StatusCode(StatusCodes.Status500InternalServerError,
+            ApiResponse.Fail("Internal Server Error", message));
     }
 }

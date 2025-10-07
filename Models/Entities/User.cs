@@ -13,43 +13,43 @@ public class User : IIdentifiable, ITimestampedEntity
     [Required]
     [MaxLength(50)]
     [Column("first_name")]
-    public required string FirstName { get; set; }
+    public string FirstName { get; set; } = string.Empty;
 
     [Required]
     [MaxLength(50)]
     [Column("last_name")]
-    public required string LastName { get; set; }
+    public string LastName { get; set; } = string.Empty;
 
     [Required]
     [Range(18, 120)]
     [Column("age")]
-    public required int Age { get; set; }
+    public int Age { get; set; }
 
     [Required]
     [MaxLength(100)]
     [Column("occupation")]
-    public required string Occupation { get; set; }
+    public string Occupation { get; set; } = string.Empty;
 
     [Required]
     [MaxLength(30)]
     [Column("phone_number")]
-    public required string PhoneNumber { get; set; }
+    public string PhoneNumber { get; set; } = string.Empty;
 
     [Required]
     [MaxLength(50)]
     [Column("ethnicity")]
-    public required string Ethnicity { get; set; }
+    public string Ethnicity { get; set; } = string.Empty;
 
     [Required]
     [MaxLength(255)]
     [Column("email_address")]
-    public required string EmailAddress { get; set; }
+    public string EmailAddress { get; set; } = string.Empty;
 
     [Required]
     [MinLength(8)]
     [MaxLength(255)]
     [Column("password_hash")]
-    public required string PasswordHash { get; set; }
+    public string PasswordHash { get; set; } = string.Empty;
 
     [Required]
     [Column("created_at")]

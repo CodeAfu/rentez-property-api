@@ -1,9 +1,10 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Diagnostics;
-using Microsoft.OpenApi.Models;
 using RentEZApi.Data;
 using RentEZApi.Models.Response;
+using RentEZApi.Services;
+using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -15,39 +16,41 @@ var jsonOptions = new JsonSerializerOptions
 
 builder.Services.AddSingleton(jsonOptions);
 
-// builder.Services.AddOpenApi();
+builder.Services.AddOpenApi("v1");
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
         options.JsonSerializerOptions.DefaultIgnoreCondition =
-            System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull;
+            JsonIgnoreCondition.WhenWritingNull;
         options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
     });
+builder.Services.AddDbContext<PropertyDbContext>();
+builder.Services.AddScoped<UserService>();
     
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(c =>
-{
-    c.SwaggerDoc("v1", new OpenApiInfo
-    {
-        Title = "RentEZ API",
-        Version = "v1",
-        Description = "RentEZ API Documentation"
-    });
-});
+// builder.Services.AddSwaggerGen(c =>
+// {
+//     c.SwaggerDoc("v1", new OpenApiInfo
+//     {
+//         Title = "RentEZ API",
+//         Version = "v1",
+//         Description = "RentEZ API Documentation"
+//     });
+// });
 
-builder.Services.AddDbContext<PropertyDbContext>();
 
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-    // app.MapOpenApi();
-    app.UseSwagger();
-    app.UseSwaggerUI(c =>
-    {
-        c.SwaggerEndpoint("/swagger/v1/swagger.json", "My API V1");
-    });
+    app.MapOpenApi();
+    app.MapScalarApiReference();
+    // app.UseSwagger();
+    // app.UseSwaggerUI(c =>
+    // {
+        // c.SwaggerEndpoint("/swagger/v1/swagger.json", "My API V1");
+    // });
 }
 
 var env = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production";

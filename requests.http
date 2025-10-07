@@ -1,5 +1,6 @@
 @host = http://localhost:5115
 @user = /api/user
+@auth = /api/auth
 
 ###
 
@@ -24,13 +25,13 @@ Content-Type: application/json
   "phoneNumber": "+60123456789",
   "occupation": "Student",
   "ethnicity": "Asian",
-  "emailAddress": "example3@gmail.com",
-  "passwordHash": "ghsdkjfhdskfhskdfhisud432r8dhv&*HG87vhds"
+  "emailAddress": "example1@gmail.com",
+  "password": "123123123"
 }
 
 ###
 
-DELETE {{host}}{{user}}/ce9dc2e1-4d4b-47a8-bc8d-88577cfb4976
+DELETE {{host}}{{user}}/c3cea2f4-b3ad-4a87-83c8-8c181ef210ce
 
 ###
 
@@ -39,4 +40,30 @@ Content-Type: application/json
 
 {
   "lastName": "Guy"
+}
+
+###
+
+POST {{host}}{{auth}}/login
+Content-Type: application/json
+
+{
+  "emailAddress": "en@gmail.com",
+  "password": "asdasdasd",
+}
+
+###
+
+POST {{host}}{{auth}}/register
+Content-Type: application/json
+
+{
+  "firstName": "New",
+  "lastName": "User",
+  "age": 19,
+  "phoneNumber": "+60123456789",
+  "occupation": "Backend Developer",
+  "ethnicity": "Indian",
+  "emailAddress": "en@gmail.com",
+  "password": "asdasdasd"
 }

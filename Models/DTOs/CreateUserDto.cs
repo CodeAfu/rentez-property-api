@@ -9,6 +9,6 @@ public class CreaterUserDto
     public required string Occupation { get; set; }
     public required string Ethnicity { get; set; }
     public required string EmailAddress { get; set; }
-    public required string PasswordHash { get; set; }
+    public required string Password { get; set; }
 
 }
