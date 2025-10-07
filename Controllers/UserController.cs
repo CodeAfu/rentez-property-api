@@ -32,7 +32,7 @@ public class UserController : ControllerBase
 
         var usersResult = await _userService.GetUsersAsync();
 
-        if (usersResult.Data == null) return UnknownError("usersResult Data is null");
+        if (usersResult.Data == null) return InternalServerError("usersResult Data is null");
 
         return Ok(
             ApiResponse<List<User>>.FromData(usersResult.Data, usersResult.Message)
@@ -64,7 +64,7 @@ public class UserController : ControllerBase
             return Conflict(ApiResponse.Fail(createUserResult.Error, createUserResult.Message));
 
         if (createUserResult.Data == null)
-            return UnknownError("User is null");
+            return InternalServerError("User is null");
 
         return Ok(ApiResponse<User>.FromData(createUserResult.Data, createUserResult.Message));
     }
@@ -77,7 +77,7 @@ public class UserController : ControllerBase
         if (deleteUserResult.Error != null) 
             return NotFound(ApiResponse.Fail(deleteUserResult.Error, deleteUserResult.Message));
 
-        if (deleteUserResult.Data == null) return UnknownError("User is null");
+        if (deleteUserResult.Data == null) return InternalServerError("User is null");
 
         return Ok(ApiResponse<User>
             .FromData(deleteUserResult.Data, deleteUserResult.Message));
@@ -91,12 +91,12 @@ public class UserController : ControllerBase
         if (editUserResult.Error != null)
             return NotFound(ApiResponse<User>.Fail(editUserResult.Error, editUserResult.Message));
 
-        if (editUserResult.Data == null) return UnknownError("editUserResult Data is null");
+        if (editUserResult.Data == null) return InternalServerError("editUserResult Data is null");
 
         return Ok(ApiResponse<User>.FromData(editUserResult.Data, editUserResult.Message));
     }
 
-    private ActionResult UnknownError(string? message)
+    private ActionResult InternalServerError(string? message)
     {
         return StatusCode(StatusCodes.Status500InternalServerError,
             ApiResponse.Fail("Internal Server Error", message));

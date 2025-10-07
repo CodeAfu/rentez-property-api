@@ -26,7 +26,7 @@ public class AuthController : ControllerBase
         if (userResult.Error != null)
             return Unauthorized(ApiResponse.Fail(userResult.Error, "Login Failed"));
 
-        if (userResult.Data == null) return UnknownError("User is null");
+        if (userResult.Data == null) return InternalServerError("User is null");
 
         var validationResult = await _userService.VerifyPasswordAsync(userResult.Data.PasswordHash, request.Password);
 
@@ -51,12 +51,12 @@ public class AuthController : ControllerBase
             return Conflict(ApiResponse.Fail(createUserResult.Error, createUserResult.Message));
 
         if (createUserResult.Data == null)
-            return UnknownError("User is null");
+            return InternalServerError("User is null");
 
         return Ok(ApiResponse<User>.FromData(createUserResult.Data, createUserResult.Message));
     }
 
-    private ActionResult UnknownError(string? message)
+    private ActionResult InternalServerError(string? message)
     {
         return StatusCode(StatusCodes.Status500InternalServerError,
             ApiResponse.Fail("Internal Server Error", message));

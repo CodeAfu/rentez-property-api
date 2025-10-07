@@ -1,6 +1,6 @@
-# [INSERT NAME HERE]
+# RentEZ Property
 
-[http://localhost:5115/swagger](http://localhost:5115/swagger)
+[http://localhost:5115/scalar](http://localhost:5115/scalar)
 
 ## Dependencies
 
@@ -16,50 +16,36 @@ Property Management System
 
 ### Features
 
-**Tenant Portal**
+**Tenant Features**
 
-asdasdhjk
+- Find Rooms
+- Contact Agent
+- Sign Agreement Digitally
+- Rent Payment
+  - Reminder Notification
+  - Automatic Payment
 
-**Owner Portal**
+**Owner Features**
 
-asdasd
+- Room Listing
+  - Add Pictures
+  - Provide Address
+  - Add Agreement
+  - Assign Agent
+- Screen Tenants
 
-**Rent Management (Stripe)**
+**Rent Management**
 
-asdkahsfjkds
+- Auto Montly Payment (Stripe)
+- Payment History
+- Agreement Renewal
 
 **Lease Management**
+
+- E-Signature
 
 [DocuSign API](https://developers.docusign.com/)
 
 ## Task 2
 
 BI
-
-## Flow
-
-Tenant perspective
-
-- Owner puts listing
-- Tenant finds property
-- Tenant contacts owner (provide information)
-- Sign agreement
-- Tenant rents property
-- Tenant enrolls in auto rent payment feature
-
-Owner perspective
-
-- Add pics of property
-- List for sale
-- Screen tenant
-
-Booking flow
-
-- Owner lists
-- Tenant finds
-- Auction for spot
-- Owner screens through
-- Winning tenant gets agreement
-- Tenant notification
-- Sign agreement (E-signature)
-- Enroll to auto payment

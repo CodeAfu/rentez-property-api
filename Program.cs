@@ -94,5 +94,3 @@ app.UseExceptionHandler(errorApp =>
 app.MapGet("/health-check", () => "API is running");
 
 app.Run();
-
-
