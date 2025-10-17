@@ -53,14 +53,6 @@ if (app.Environment.IsDevelopment())
     // });
 }
 
-var env = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production";
-Console.WriteLine($"ENV_VAR={env}");
-
-var environment = app.Environment.EnvironmentName;
-Console.WriteLine($"===============================");
-Console.WriteLine($"Environment: {environment}");
-Console.WriteLine($"===============================");
-
 app.UseHttpsRedirection();
 app.UseAuthorization();
 app.MapControllers();
@@ -86,11 +78,10 @@ app.UseExceptionHandler(errorApp =>
             response.Message = error.Error.Message;
         }
 
-                
         await context.Response.WriteAsJsonAsync(response, jsonOptions);
     });
 });
 
-app.MapGet("/health-check", () => "API is running");
+app.MapGet("/health", () => "API is running");
 
 app.Run();

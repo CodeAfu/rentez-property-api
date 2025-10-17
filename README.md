@@ -8,6 +8,7 @@
 dotnet add package Npgsql.EntityFrameworkCore.PostgreSQL
 dotnet add package Microsoft.EntityFrameworkCore.Design
 dotnet add package Microsoft.EntityFrameworkCore.Tools
+dotnet add package DocuSign.eSign.dll
 ```
 
 Property Management System
@@ -30,21 +31,21 @@ Property Management System
 - Room Listing
   - Add Pictures
   - Provide Address
-  - Add Agreement
-  - Assign Agent
+  - Add Agreement (Store in S3)
+  - Assign Agent (Optional?)
 - Screen Tenants
 
-**Rent Management**
+**Rent Management Features**
 
-- Auto Montly Payment (Stripe)
+- Auto Monthly Payment (Stripe)
 - Payment History
 - Agreement Renewal
 
-**Lease Management**
+**Lease Management Features**
 
-- E-Signature
+- E-Signature (DocuSeal)
 
-[DocuSign API](https://developers.docusign.com/)
+[DocuSeal API](https://www.docuseal.com/docs/api)
 
 ## Task 2
 

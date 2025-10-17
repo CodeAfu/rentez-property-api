@@ -294,3 +294,4 @@ backup.rar
 # appsettings.Development.json
 # appsettings.*.json
 appsettings.json
+secrets.txt
