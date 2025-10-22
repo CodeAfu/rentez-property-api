@@ -14,6 +14,5 @@ public class AuthorizationService
     {
         return _passwordHasher.VerifyHashedPassword(null!, passwordHash, password)
             == PasswordVerificationResult.Success;
-
     }
 }

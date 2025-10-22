@@ -4,7 +4,7 @@
 
 ###
 
-GET {{host}}/health-check
+GET {{host}}/health
 
 ###
 
@@ -12,7 +12,7 @@ GET {{host}}{{user}}
 
 ###
 
-GET {{host}}{{user}}/c3cea2f4-b3ad-4a87-83c8-8c181ef210ce
+GET {{host}}{{user}}/aa76393b-b481-418d-8a1e-117377d8836d
 
 ###
 POST {{host}}{{user}}/
@@ -25,21 +25,21 @@ Content-Type: application/json
   "phoneNumber": "+60123456789",
   "occupation": "Student",
   "ethnicity": "Asian",
-  "emailAddress": "example1@gmail.com",
+  "emailAddress": "example2@gmail.com",
   "password": "123123123"
 }
 
 ###
 
-DELETE {{host}}{{user}}/c3cea2f4-b3ad-4a87-83c8-8c181ef210ce
+DELETE {{host}}{{user}}/aa76393b-b481-418d-8a1e-117377d8836d
 
 ###
 
-PUT {{host}}{{user}}/c3cea2f4-b3ad-4a87-83c8-8c181ef210ce
+PUT {{host}}{{user}}/c0fe3903-81b4-42cb-9f15-79b0159cf82f
 Content-Type: application/json
 
 {
-  "lastName": "Guy"
+  "lastName": "Last"
 }
 
 ###
@@ -49,7 +49,7 @@ Content-Type: application/json
 
 {
   "emailAddress": "en@gmail.com",
-  "password": "asdasdasd",
+  "password": "asdasdasd"
 }
 
 ###

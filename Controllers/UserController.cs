@@ -1,8 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Models.DTOs;
+using RentEZApi.Exceptions;
 using RentEZApi.Models.DTOs;
-using RentEZApi.Models.Entities;
-using RentEZApi.Models.Response;
 using RentEZApi.Services;
 
 namespace RentEZApi.Controllers;
@@ -12,93 +11,122 @@ namespace RentEZApi.Controllers;
 public class UserController : ControllerBase
 {
     private readonly UserService _userService;
+    private readonly ConfigService _configService;
+    private readonly string unknownErrorMessage = "Unknown error occurred";
 
-    public UserController(UserService userService)
+    public UserController(UserService userService, ConfigService configService)
     {
         _userService = userService;
+        _configService = configService;
     }
 
     [HttpGet]
     public async Task<ActionResult> GetUsers()
     {
-        var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
-
-        if (environment != "Development")
+        if (_configService.GetEnvironment() != "Development")
         {
-            return BadRequest(
-                ApiResponse.Fail("Invalid Permission", "You do not have permission to access this endpoint")
+            return Unauthorized(
+                new
+                {
+                    error = "User does not have permissions to access this endpoint",
+                    message = "Not allowed",
+                }
             );
         }
-
-        var usersResult = await _userService.GetUsersAsync();
-
-        if (usersResult.Data == null) return InternalServerError("usersResult Data is null");
-
-        return Ok(
-            ApiResponse<List<User>>.FromData(usersResult.Data, usersResult.Message)
-        );
+        
+        var user = await _userService.GetUsersAsync();
+        if (user == null) 
+            return NotFound(new { message = "User not found" });
+        
+        return Ok(user);
     }
 
     [HttpGet("{id}")]
     public async Task<ActionResult> GetUser(Guid id)
     {
-        var userResult = await _userService.GetUserAsync(id);
-
-        if (userResult.Data == null)
-            return NotFound(
-                ApiResponse.Fail("User not found", $"User with id '{id}' not found.")
-            );
-
-        return Ok(ApiResponse<User>.FromData(userResult.Data, userResult.Message));
+        var user = await _userService.GetUserAsync(id);
+        if (user == null) 
+            return NotFound(new { message = "User not found" });
+        
+        return Ok(user);
     }
 
     [HttpPost]
     public async Task<ActionResult> CreateUser(CreaterUserDto request)
     {
         if (!ModelState.IsValid)
-            return BadRequest(ApiResponse.Fail("Invalid input", ModelState.ToString()));
+            return BadRequest(new
+            {
+                error = ModelState
+                    .Where(kvp => kvp.Value?.Errors.Count > 0)
+                    .ToDictionary(
+                        kvp => kvp.Key,
+                        kvp => kvp.Value?.Errors.Select(e => e.ErrorMessage).ToArray()
+                    ),
+                message = "Invalid Input"
+            });
 
-        var createUserResult = await _userService.CreateUserAsync(request);
-
-        if (createUserResult.Error != null)
-            return Conflict(ApiResponse.Fail(createUserResult.Error, createUserResult.Message));
-
-        if (createUserResult.Data == null)
-            return InternalServerError("User is null");
-
-        return Ok(ApiResponse<User>.FromData(createUserResult.Data, createUserResult.Message));
+        try
+        {
+            var user = await _userService.CreateUserAsync(request);
+            return CreatedAtAction(
+                nameof(GetUser),
+                new { id = user.Id },
+                user
+            );        
+        }
+        catch (DuplicateEmailException ex)
+        {
+            return Conflict(new { error = ex.Message, message = "Email address is already taken" });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(
+                StatusCodes.Status500InternalServerError,
+                new { error = ex.Message, message = unknownErrorMessage }
+            );
+        }
     }
 
     [HttpDelete("{id}")]
     public async Task<ActionResult> DeleteUser(Guid id)
     {
-        var deleteUserResult = await _userService.DeleteUserAsync(id);
-
-        if (deleteUserResult.Error != null) 
-            return NotFound(ApiResponse.Fail(deleteUserResult.Error, deleteUserResult.Message));
-
-        if (deleteUserResult.Data == null) return InternalServerError("User is null");
-
-        return Ok(ApiResponse<User>
-            .FromData(deleteUserResult.Data, deleteUserResult.Message));
+        try
+        {
+            var deletedUser = await _userService.DeleteUserAsync(id);
+            return NoContent();
+        }
+        catch (UserNotFoundException ex)
+        {
+            return NotFound(new { error = ex.Message, message = "User not found"});
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(
+                StatusCodes.Status500InternalServerError,
+                new { error = ex.Message, message = unknownErrorMessage }
+            );
+        } 
     }
 
     [HttpPut("{id}")]
     public async Task<ActionResult> EditUser(Guid id, EditUserDto request)
     {
-        var editUserResult = await _userService.EditUserAsync(id, request);
-
-        if (editUserResult.Error != null)
-            return NotFound(ApiResponse<User>.Fail(editUserResult.Error, editUserResult.Message));
-
-        if (editUserResult.Data == null) return InternalServerError("editUserResult Data is null");
-
-        return Ok(ApiResponse<User>.FromData(editUserResult.Data, editUserResult.Message));
-    }
-
-    private ActionResult InternalServerError(string? message)
-    {
-        return StatusCode(StatusCodes.Status500InternalServerError,
-            ApiResponse.Fail("Internal Server Error", message));
+        try
+        {
+            var edittedUser = await _userService.EditUserAsync(id, request);
+            return Ok(edittedUser);
+        }
+        catch (UserNotFoundException ex)
+        {
+            return NotFound(new { error = ex.Message, message = "User not found"});
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(
+                StatusCodes.Status500InternalServerError,
+                new { error = ex.Message, message = unknownErrorMessage }
+            ); 
+        }
     }
 }

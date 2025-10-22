@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
+using RentEZApi.Exceptions;
 using RentEZApi.Models.DTOs;
-using RentEZApi.Models.Entities;
-using RentEZApi.Models.Response;
 using RentEZApi.Services;
 
 namespace RentEZApi.Controllers;
@@ -11,6 +10,7 @@ namespace RentEZApi.Controllers;
 public class AuthController : ControllerBase
 {
     private readonly UserService _userService;
+    private readonly string unknownErrorMessage = "Unknown error occurred";
 
     public AuthController(UserService userService)
     {
@@ -21,44 +21,64 @@ public class AuthController : ControllerBase
     // [ValidateAntiForgeryToken]
     public async Task<IActionResult> Login(UserAuthDto request)
     {
-        var userResult = await _userService.GetUserByEmailAsync(request.EmailAddress);
-
-        if (userResult.Error != null)
-            return Unauthorized(ApiResponse.Fail(userResult.Error, "Login Failed"));
-
-        if (userResult.Data == null) return InternalServerError("User is null");
-
-        var validationResult = await _userService.VerifyPasswordAsync(userResult.Data.PasswordHash, request.Password);
-
-        if (validationResult.Error != null) 
-            return Unauthorized(ApiResponse.Fail(validationResult.Error, "Login Failed"));
-
-        if (validationResult.Data == false)
-            return Unauthorized(ApiResponse.Fail("Login failed", "You are not authorized to perform this action"));
-
-        return Ok(ApiResponse<UserAuthDto>.FromData(request, "Login Successful"));
+        try
+        {
+            var user = await _userService.GetUserByEmailAsync(request.EmailAddress);
+            await _userService.VerifyPasswordAsync(user.PasswordHash, request.Password);
+            return Accepted(new { message = "Login Successful" });
+        }
+        catch (UserNotFoundException ex)
+        {
+            return UserUnauthorized(ex.Message, "Login Failed");
+        }
+        catch (InvalidPasswordException ex)
+        {
+            return UserUnauthorized(ex.Message, "Login Failed");
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(
+                StatusCodes.Status500InternalServerError,
+                new { error = ex.Message, message = unknownErrorMessage }
+            );
+        }
     }
 
     [HttpPost("register")]
     public async Task<ActionResult> Register(CreaterUserDto request)
     {
         if (!ModelState.IsValid)
-            return BadRequest(ApiResponse.Fail("Invalid input", ModelState.ToString()));
+            return BadRequest(new
+            {
+                error = ModelState
+                    .Where(kvp => kvp.Value?.Errors.Count > 0)
+                    .ToDictionary(
+                        kvp => kvp.Key,
+                        kvp => kvp.Value?.Errors.Select(e => e.ErrorMessage).ToArray()
+                    ),
+                message = "Invalid Input"
+            });
 
-        var createUserResult = await _userService.CreateUserAsync(request);
-
-        if (createUserResult.Error != null)
-            return Conflict(ApiResponse.Fail(createUserResult.Error, createUserResult.Message));
-
-        if (createUserResult.Data == null)
-            return InternalServerError("User is null");
-
-        return Ok(ApiResponse<User>.FromData(createUserResult.Data, createUserResult.Message));
+        try
+        {
+            var createdUser = await _userService.CreateUserAsync(request);
+            return Ok(createdUser);
+        }
+        catch (DuplicateEmailException ex)
+        {
+            return BadRequest(new { error = ex.Message, message = "Email already exists" });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(
+                StatusCodes.Status500InternalServerError,
+                new { error = ex.Message, message = unknownErrorMessage }
+            );
+        }
     }
 
-    private ActionResult InternalServerError(string? message)
+    private UnauthorizedObjectResult UserUnauthorized(string error, string message)
     {
-        return StatusCode(StatusCodes.Status500InternalServerError,
-            ApiResponse.Fail("Internal Server Error", message));
+        return Unauthorized(new { error, message });
     }
 }

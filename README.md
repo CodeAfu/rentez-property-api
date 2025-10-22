@@ -8,7 +8,9 @@
 dotnet add package Npgsql.EntityFrameworkCore.PostgreSQL
 dotnet add package Microsoft.EntityFrameworkCore.Design
 dotnet add package Microsoft.EntityFrameworkCore.Tools
-dotnet add package DocuSign.eSign.dll
+
+# DocuSeal
+docker run --name docuseal -p 3000:3000 -v.:/data docuseal/docuseal
 ```
 
 Property Management System
@@ -31,7 +33,7 @@ Property Management System
 - Room Listing
   - Add Pictures
   - Provide Address
-  - Add Agreement (Store in S3)
+  - Add Agreement (Store in S3, should discuss security concerns)
   - Assign Agent (Optional?)
 - Screen Tenants
 
@@ -43,9 +45,7 @@ Property Management System
 
 **Lease Management Features**
 
-- E-Signature (DocuSeal)
-
-[DocuSeal API](https://www.docuseal.com/docs/api)
+- E-Signing [DocuSeal](https://www.docuseal.com/docs/api)
 
 ## Task 2
 
