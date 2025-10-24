@@ -1,22 +1,17 @@
-# Use the official .NET SDK image for building
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /src
+COPY ["RentEZApi.csproj", "./"]
+RUN dotnet restore "RentEZApi.csproj"
+COPY . .
+RUN dotnet publish "RentEZApi.csproj" -c Release -o /app/publish /p:UseAppHost=false
 
-# Copy csproj and restore dependencies
-COPY *.csproj ./
-RUN dotnet restore
-
-# Copy everything else and build
-COPY . ./
-RUN dotnet publish -c Release -o /app/publish
-
-# Use the runtime image for the final stage
 FROM mcr.microsoft.com/dotnet/aspnet:9.0
 WORKDIR /app
-COPY --from=build /app/publish .
-
-# Expose port (Railway uses $PORT environment variable)
 EXPOSE 8080
 ENV ASPNETCORE_URLS=http://+:8080
 
-ENTRYPOINT ["dotnet", "api.dll"]
+# Security: run as non-root
+USER $APP_UID
+
+COPY --from=build /app/publish .
+ENTRYPOINT ["dotnet", "RentEZApi.dll"]

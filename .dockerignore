@@ -1,22 +1,76 @@
-# Use the official .NET SDK image for building
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
-WORKDIR /src
+# Build artifacts
+bin/
+obj/
+out/
 
-# Copy csproj and restore dependencies
-COPY *.csproj ./
-RUN dotnet restore
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
 
-# Copy everything else and build
-COPY . ./
-RUN dotnet publish -c Release -o /app/publish
+# Rider
+.idea/
 
-# Use the runtime image for the final stage
-FROM mcr.microsoft.com/dotnet/aspnet:8.0
-WORKDIR /app
-COPY --from=build /app/publish .
+# User-specific files
+*.rsuser
+*.userprefs
 
-# Expose port (Railway uses $PORT environment variable)
-EXPOSE 8080
-ENV ASPNETCORE_URLS=http://+:8080
+# Build results
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Aa]rm/
+[Aa]rm64/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
 
-ENTRYPOINT ["dotnet", "YourApiName.dll"]
+# Test results
+TestResults/
+[Tt]est[Rr]esult*/
+*.trx
+*.coverage
+*.coveragexml
+
+# NuGet
+*.nupkg
+*.snupkg
+packages/
+!**/packages/build/
+
+# Runtime and temp files
+*.dll
+*.exe
+*.pdb
+*.cache
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Docker
+Dockerfile*
+.dockerignore
+docker-compose*
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+azure-pipelines.yml
+
+# Documentation
+*.md
+LICENSE
+.editorconfig
+
+# Environment
+.env
+.env.*
+appsettings.Development.json
+launchSettings.json
