@@ -9,5 +9,6 @@ public class ConfigService
     }
 
     public string GetEnvironment() => _config["ASPNETCORE_ENVIRONMENT"] ?? "Production";
+    public bool IsDevelopment() => _config["ASPNETCORE_ENVIRONMENT"] == "Development";
     public string? GetDocuSealAuthToken() => _config["DocuSealAuthToken"];
 }

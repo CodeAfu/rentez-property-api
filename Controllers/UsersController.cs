@@ -8,13 +8,13 @@ namespace RentEZApi.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class UserController : ControllerBase
+public class UsersController : ControllerBase
 {
-    private readonly UserService _userService;
+    private readonly UsersService _userService;
     private readonly ConfigService _configService;
     private readonly string unknownErrorMessage = "Unknown error occurred";
 
-    public UserController(UserService userService, ConfigService configService)
+    public UsersController(UsersService userService, ConfigService configService)
     {
         _userService = userService;
         _configService = configService;

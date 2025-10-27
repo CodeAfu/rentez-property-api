@@ -12,6 +12,19 @@ var jsonOptions = new JsonSerializerOptions
     PropertyNamingPolicy = JsonNamingPolicy.CamelCase
 };
 
+var allowedOrigins = builder.Configuration.GetSection("AllowedOrigins").Get<string[]>();
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowNextJS", policy =>
+    {
+        policy.WithOrigins(allowedOrigins ?? Array.Empty<string>())
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials();
+    });
+});
+
 builder.Services.AddSingleton(jsonOptions);
 
 builder.Services.AddOpenApi("v1");
@@ -27,8 +40,9 @@ builder.Services.AddDbContext<PropertyDbContext>();
 
 builder.Services.AddSingleton<ConfigService>();
 
-builder.Services.AddScoped<UserService>();
+builder.Services.AddScoped<UsersService>();
 builder.Services.AddScoped<AuthorizationService>();
+builder.Services.AddScoped<DocuSealService>();
     
 builder.Services.AddEndpointsApiExplorer();
 
@@ -41,10 +55,11 @@ if (app.Environment.IsDevelopment())
     app.MapScalarApiReference();
 }
 
+app.UseCors("AllowNextJS");
+
 app.UseHttpsRedirection();
 app.UseAuthorization();
 app.MapControllers();
-
 
 app.MapGet("/health", () => new { message = "API is running" });
 

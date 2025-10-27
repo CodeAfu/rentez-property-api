@@ -7,11 +7,11 @@ using RentEZApi.Exceptions;
 
 namespace RentEZApi.Services;
 
-public class UserService
+public class UsersService
 {
     private readonly PropertyDbContext _dbContext;
 
-    public UserService(PropertyDbContext dbContext)
+    public UsersService(PropertyDbContext dbContext)
     {
         _dbContext = dbContext;
     }
