@@ -8,8 +8,6 @@ public class ConfigService
         _config = config;
     }
 
-    public string GetEnvironment()
-    {
-        return _config["ASPNETCORE_ENVIRONMENT"] ?? "Production";
-    }
+    public string GetEnvironment() => _config["ASPNETCORE_ENVIRONMENT"] ?? "Production";
+    public string? GetDocuSealAuthToken() => _config["DocuSealAuthToken"];
 }

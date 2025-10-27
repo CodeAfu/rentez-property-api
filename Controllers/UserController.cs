@@ -33,7 +33,7 @@ public class UserController : ControllerBase
                 }
             );
         }
-        
+
         var user = await _userService.GetUsersAsync();
         if (user == null) 
             return NotFound(new { message = "User not found" });

@@ -59,4 +59,6 @@ public class User : IIdentifiable, ITimestampedEntity
     [Required]
     [Column("updated_at")]
     public DateTime UpdatedAt { get; set; }
+
+    public ICollection<DocuSealPDFTemplate> Templates { get; set; } = new List<DocuSealPDFTemplate>();
 }

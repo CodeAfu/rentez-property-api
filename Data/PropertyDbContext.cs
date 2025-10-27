@@ -12,27 +12,18 @@ public class PropertyDbContext : DbContext
     }
 
     public DbSet<User> Users { get; set; } = null!;
+    public DbSet<DocuSealPDFTemplate> DocuSealPDFTemplates { get; set; } = null!;
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
-        if (!optionsBuilder.IsConfigured)
-        {
-            var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production";
-
-            var configuration = new ConfigurationBuilder()
-                .SetBasePath(Directory.GetCurrentDirectory())
-                .AddJsonFile("appsettings.json")
-                .AddJsonFile($"appsettings.{environment}.json", optional: true)
-                .Build();
-            
-            var connectionString = configuration.GetConnectionString("DefaultConnection");
-            optionsBuilder.UseNpgsql(connectionString);
-        }
+        optionsBuilder.ConfigureNpgsql();
     }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+
+        ConfigureTimestamps(modelBuilder);
 
         modelBuilder.Entity<User>(entity =>
         {
@@ -41,31 +32,53 @@ public class PropertyDbContext : DbContext
                 t.HasCheckConstraint(
                     "CK_User_Age", "age >= 18 AND age <= 120"
                 ));
-            entity.Property(e => e.CreatedAt)
-                .HasDefaultValueSql("NOW()")
-                .ValueGeneratedOnAdd();
+        });
 
-            entity.Property(e => e.UpdatedAt)
-                .HasDefaultValueSql("NOW()")
-                .ValueGeneratedOnAdd();
+        modelBuilder.Entity<DocuSealPDFTemplate>(entity =>
+        {
+            entity.HasOne(d => d.Owner)
+                .WithMany(u => u.Templates)
+                .HasForeignKey(d => d.OwnerId)
+                .OnDelete(DeleteBehavior.Cascade);
+                
+            entity.HasIndex(e => e.TemplateId).IsUnique();
         });
     }
-    
+
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
-        var entries = ChangeTracker.Entries<ITimestampedEntity>()
-            .Where(e => e.State == EntityState.Modified);
-        
-        foreach (var entry in entries)
-        {
-            entry.Entity.UpdatedAt = DateTime.UtcNow;
-        }
-        
+        UpdateTimestamps();
         return base.SaveChangesAsync(cancellationToken);
     }
 
     public override int SaveChanges()
     {
+        UpdateTimestamps();
+        return base.SaveChanges();
+    }
+
+    private void ConfigureTimestamps(ModelBuilder modelBuilder)
+    {
+        foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+        {
+            if (typeof(ITimestampedEntity).IsAssignableFrom(entityType.ClrType))
+            {
+                modelBuilder.Entity(entityType.ClrType, builder =>
+                {
+                    builder.Property(nameof(ITimestampedEntity.CreatedAt))
+                        .HasDefaultValueSql("NOW()")
+                        .ValueGeneratedOnAdd();
+                    
+                    builder.Property(nameof(ITimestampedEntity.UpdatedAt))
+                        .HasDefaultValueSql("NOW()")
+                        .ValueGeneratedOnAddOrUpdate();
+                });
+            }
+        }
+    }
+
+    private void UpdateTimestamps()
+    {
         var entries = ChangeTracker.Entries<ITimestampedEntity>()
             .Where(e => e.State == EntityState.Modified);
         
@@ -73,7 +86,5 @@ public class PropertyDbContext : DbContext
         {
             entry.Entity.UpdatedAt = DateTime.UtcNow;
         }
-        
-        return base.SaveChanges();
     }
 }
