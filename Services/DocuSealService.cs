@@ -3,8 +3,6 @@ using System.Net;
 using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
-using System.Text.Json.Serialization;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using RentEZApi.Data;
 using RentEZApi.Models.DTOs.DocuSeal;
@@ -23,51 +21,48 @@ public class DocuSealService
         _config = config;
     }
 
-    public async Task<string> GetBuilderToken(string? userEmail = null)
+    public string GetBuilderToken(string? userEmail = null)
     {
-        return await Task.Run(() =>
+        var apiKey = _config.GetDocuSealAuthToken()!;
+    
+        var payload = new Dictionary<string, object>
         {
-            var apiKey = _config.GetDocuSealAuthToken()!;
+            { "exp", DateTimeOffset.UtcNow.AddHours(1).ToUnixTimeSeconds() }
+        };
         
-            var payload = new Dictionary<string, object>
-            {
-                { "exp", DateTimeOffset.UtcNow.AddHours(1).ToUnixTimeSeconds() }
-            };
-            
-            if (!string.IsNullOrEmpty(userEmail))
-            {
-                payload["user_email"] = userEmail;
-            }
-        
-            var secret = Encoding.UTF8.GetBytes(apiKey);
-            var securityKey = new SymmetricSecurityKey(secret);
-            var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
-        
-            var token = new JwtSecurityToken(
-                claims: payload.Select(kvp => new Claim(kvp.Key, kvp.Value?.ToString() ?? "")),
-                expires: DateTime.UtcNow.AddHours(1),
-                signingCredentials: credentials
-            );
-        
-            return new JwtSecurityTokenHandler().WriteToken(token);
-        });
+        if (!string.IsNullOrEmpty(userEmail))
+        {
+            payload["user_email"] = userEmail;
+        }
+    
+        var secret = Encoding.UTF8.GetBytes(apiKey);
+        var securityKey = new SymmetricSecurityKey(secret);
+        var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
+    
+        var token = new JwtSecurityToken(
+            claims: payload.Select(kvp => new Claim(kvp.Key, kvp.Value?.ToString() ?? "")),
+            expires: DateTime.UtcNow.AddHours(1),
+            signingCredentials: credentials
+        );
+    
+        return new JwtSecurityTokenHandler().WriteToken(token);
     }
 
-    public async Task<RestResponse> GetAllTemplates()
+    public async Task<RestResponse> GetAllTemplates(CancellationToken ct = default)
     {
         var client = new RestClient("https://api.docuseal.com/templates");
         var request = new RestRequest("", Method.Get);
         request.AddHeader("X-Auth-Token", _config.GetDocuSealAuthToken()!);
-        var response = await client.ExecuteAsync(request);
+        var response = await client.ExecuteAsync(request, ct);
         return response;
     }
 
-    public async Task<RestResponse> GetTemplate(string templateId)
+    public async Task<RestResponse> GetTemplate(string templateId, CancellationToken ct = default)
     {
         var client = new RestClient($"https://api.docuseal.com/templates/{templateId}");
         var request = new RestRequest("", Method.Get);
         request.AddHeader("X-Auth-Token", _config.GetDocuSealAuthToken()!);
-        var response = await client.ExecuteAsync(request);
+        var response = await client.ExecuteAsync(request, ct);
         return response;
     }
 

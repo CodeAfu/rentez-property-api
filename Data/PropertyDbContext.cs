@@ -29,10 +29,10 @@ public class PropertyDbContext : DbContext
         {
             // From IdentityUser
             entity.Property(e => e.Id).HasColumnName("id");
-            entity.Property(e => e.Email).HasColumnName("email_address").HasMaxLength(255).IsRequired();
-            entity.Property(e => e.UserName).HasColumnName("user_name");
-            entity.Property(e => e.NormalizedEmail).HasColumnName("normalized_email");
-            entity.Property(e => e.NormalizedUserName).HasColumnName("normalized_user_name");
+            entity.Property(e => e.Email).HasColumnName("email_address").HasMaxLength(256).IsRequired();
+            entity.Property(e => e.UserName).HasColumnName("user_name").HasMaxLength(256);
+            entity.Property(e => e.NormalizedEmail).HasColumnName("normalized_email").HasMaxLength(256);
+            entity.Property(e => e.NormalizedUserName).HasColumnName("normalized_user_name").HasMaxLength(256);
             entity.Property(e => e.SecurityStamp).HasColumnName("security_stamp");
             entity.Property(e => e.ConcurrencyStamp).HasColumnName("concurrency_stamp");
             entity.Property(e => e.AccessFailedCount).HasColumnName("access_failed_count");
@@ -52,7 +52,7 @@ public class PropertyDbContext : DbContext
             entity.Property(e => e.PhoneNumber).HasColumnName("phone_number").HasMaxLength(30);
             entity.Property(e => e.PasswordHash)
                 .HasColumnName("password_hash")
-                .HasMaxLength(255)
+                .HasColumnType("text")
                 .IsRequired();
         });
 

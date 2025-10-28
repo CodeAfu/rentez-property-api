@@ -105,7 +105,7 @@ public class UsersService
     public async Task<bool> EmailExistsAsync(string email)
             => await _dbContext.Users.FirstOrDefaultAsync(u => u.Email == email) != null;
 
-    public void VerifyPasswordAsync(string passwordHash, string password)
+    public void VerifyPassword(string passwordHash, string password)
     {
         var validationSuccess = AuthorizationService.VerifyPassword(passwordHash, password);
         if (!validationSuccess)

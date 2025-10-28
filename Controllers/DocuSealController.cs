@@ -24,7 +24,7 @@ public class DocuSealController : ControllerBase
     {
         // var userEmail = User.FindFirst(ClaimTypes.Email)?.Value;
         var userEmail = "ibrahim.afzal1999+test@gmail.com";
-        var tokenString = await _docuSealService.GetBuilderToken(userEmail);
+        var tokenString = _docuSealService.GetBuilderToken(userEmail);
         return Ok(new { token = tokenString });
     }
 
