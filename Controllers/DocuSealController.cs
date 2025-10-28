@@ -19,7 +19,7 @@ public class DocuSealController : ControllerBase
     }
 
 
-    [HttpPost("builder-token")]
+[HttpPost("builder-token")]
     public async Task<IActionResult> GetBuilderToken()
     {
         // var userEmail = User.FindFirst(ClaimTypes.Email)?.Value;
