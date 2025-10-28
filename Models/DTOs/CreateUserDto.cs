@@ -8,6 +8,6 @@ public class CreaterUserDto
     public required string PhoneNumber { get; set; }
     public required string Occupation { get; set; }
     public required string Ethnicity { get; set; }
-    public required string EmailAddress { get; set; }
+    public required string Email { get; set; }
     public required string Password { get; set; }
 }

@@ -24,7 +24,14 @@ public class AuthController : ControllerBase
         try
         {
             var user = await _userService.GetUserByEmailAsync(request.EmailAddress);
-            await _userService.VerifyPasswordAsync(user.PasswordHash, request.Password);
+
+            if (string.IsNullOrEmpty(user.PasswordHash))
+                return Unauthorized(new {
+                    error = "User does not have a password value",
+                    message = "Invalid Credentials"
+                });
+
+            _userService.VerifyPasswordAsync(user.PasswordHash, request.Password);
             return Accepted(new { message = "Login Successful" });
         }
         catch (UserNotFoundException ex)

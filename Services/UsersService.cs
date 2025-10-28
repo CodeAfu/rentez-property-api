@@ -24,7 +24,7 @@ public class UsersService
 
     public async Task<User> GetUserByEmailAsync(string emailAddress)
     {
-        var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.EmailAddress == emailAddress);
+        var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.Email == emailAddress);
         if (user == null)
             throw new UserNotFoundException($"User with email '{emailAddress} not found");
 
@@ -46,8 +46,8 @@ public class UsersService
 
     public async Task<User> CreateUserAsync(CreaterUserDto request)
     {
-        if (await EmailExistsAsync(request.EmailAddress))
-            throw new DuplicateEmailException(request.EmailAddress);
+        if (await EmailExistsAsync(request.Email))
+            throw new DuplicateEmailException(request.Email);
             
         var user = new User
         {
@@ -57,7 +57,7 @@ public class UsersService
             PhoneNumber = request.PhoneNumber,
             Occupation = request.Occupation,
             Ethnicity = request.Ethnicity,
-            EmailAddress = request.EmailAddress,
+            Email = request.Email,
             PasswordHash = AuthorizationService.HashPassword(request.Password),
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
@@ -102,10 +102,10 @@ public class UsersService
         return user;
     }
 
-    public async Task<bool> EmailExistsAsync(string emailAddress)
-            => await _dbContext.Users.FirstOrDefaultAsync(u => u.EmailAddress == emailAddress) != null;
+    public async Task<bool> EmailExistsAsync(string email)
+            => await _dbContext.Users.FirstOrDefaultAsync(u => u.Email == email) != null;
 
-    public async Task VerifyPasswordAsync(string passwordHash, string password)
+    public void VerifyPasswordAsync(string passwordHash, string password)
     {
         var validationSuccess = AuthorizationService.VerifyPassword(passwordHash, password);
         if (!validationSuccess)

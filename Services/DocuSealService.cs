@@ -25,29 +25,32 @@ public class DocuSealService
 
     public async Task<string> GetBuilderToken(string? userEmail = null)
     {
-        var apiKey = _config.GetDocuSealAuthToken()!;
-    
-        var payload = new Dictionary<string, object>
+        return await Task.Run(() =>
         {
-            { "exp", DateTimeOffset.UtcNow.AddHours(1).ToUnixTimeSeconds() }
-        };
+            var apiKey = _config.GetDocuSealAuthToken()!;
         
-        if (!string.IsNullOrEmpty(userEmail))
-        {
-            payload["user_email"] = userEmail;
-        }
-    
-        var secret = Encoding.UTF8.GetBytes(apiKey);
-        var securityKey = new SymmetricSecurityKey(secret);
-        var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
-    
-        var token = new JwtSecurityToken(
-            claims: payload.Select(kvp => new Claim(kvp.Key, kvp.Value?.ToString() ?? "")),
-            expires: DateTime.UtcNow.AddHours(1),
-            signingCredentials: credentials
-        );
-    
-        return new JwtSecurityTokenHandler().WriteToken(token);
+            var payload = new Dictionary<string, object>
+            {
+                { "exp", DateTimeOffset.UtcNow.AddHours(1).ToUnixTimeSeconds() }
+            };
+            
+            if (!string.IsNullOrEmpty(userEmail))
+            {
+                payload["user_email"] = userEmail;
+            }
+        
+            var secret = Encoding.UTF8.GetBytes(apiKey);
+            var securityKey = new SymmetricSecurityKey(secret);
+            var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
+        
+            var token = new JwtSecurityToken(
+                claims: payload.Select(kvp => new Claim(kvp.Key, kvp.Value?.ToString() ?? "")),
+                expires: DateTime.UtcNow.AddHours(1),
+                signingCredentials: credentials
+            );
+        
+            return new JwtSecurityTokenHandler().WriteToken(token);
+        });
     }
 
     public async Task<RestResponse> GetAllTemplates()
@@ -55,7 +58,7 @@ public class DocuSealService
         var client = new RestClient("https://api.docuseal.com/templates");
         var request = new RestRequest("", Method.Get);
         request.AddHeader("X-Auth-Token", _config.GetDocuSealAuthToken()!);
-        var response = client.Execute(request);
+        var response = await client.ExecuteAsync(request);
         return response;
     }
 
@@ -64,7 +67,7 @@ public class DocuSealService
         var client = new RestClient($"https://api.docuseal.com/templates/{templateId}");
         var request = new RestRequest("", Method.Get);
         request.AddHeader("X-Auth-Token", _config.GetDocuSealAuthToken()!);
-        var response = client.Execute(request);
+        var response = await client.ExecuteAsync(request);
         return response;
     }
 

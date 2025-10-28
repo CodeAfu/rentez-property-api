@@ -27,11 +27,33 @@ public class PropertyDbContext : DbContext
 
         modelBuilder.Entity<User>(entity =>
         {
-            entity.HasIndex(e => e.EmailAddress).IsUnique();
+            // From IdentityUser
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.Email).HasColumnName("email_address").HasMaxLength(255).IsRequired();
+            entity.Property(e => e.UserName).HasColumnName("user_name");
+            entity.Property(e => e.NormalizedEmail).HasColumnName("normalized_email");
+            entity.Property(e => e.NormalizedUserName).HasColumnName("normalized_user_name");
+            entity.Property(e => e.SecurityStamp).HasColumnName("security_stamp");
+            entity.Property(e => e.ConcurrencyStamp).HasColumnName("concurrency_stamp");
+            entity.Property(e => e.AccessFailedCount).HasColumnName("access_failed_count");
+            entity.Property(e => e.EmailConfirmed).HasColumnName("email_confirmed");
+            entity.Property(e => e.LockoutEnabled).HasColumnName("lockout_enabled");
+            entity.Property(e => e.LockoutEnd).HasColumnName("lockout_end");
+            entity.Property(e => e.PhoneNumberConfirmed).HasColumnName("phone_number_confirmed");
+            entity.Property(e => e.TwoFactorEnabled).HasColumnName("two_factor_enabled");
+
+            // Constraint
+            entity.HasIndex(e => e.Email).IsUnique();
             entity.ToTable(t =>
                 t.HasCheckConstraint(
                     "CK_User_Age", "age >= 18 AND age <= 120"
                 ));
+
+            entity.Property(e => e.PhoneNumber).HasColumnName("phone_number").HasMaxLength(30);
+            entity.Property(e => e.PasswordHash)
+                .HasColumnName("password_hash")
+                .HasMaxLength(255)
+                .IsRequired();
         });
 
         modelBuilder.Entity<DocuSealPDFTemplate>(entity =>
@@ -76,7 +98,7 @@ public class PropertyDbContext : DbContext
             }
         }
     }
-
+    
     private void UpdateTimestamps()
     {
         var entries = ChangeTracker.Entries<ITimestampedEntity>()

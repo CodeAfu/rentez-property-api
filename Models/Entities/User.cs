@@ -1,15 +1,12 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.AspNetCore.Identity;
 
 namespace RentEZApi.Models.Entities;
 
 [Table("users")]
-public class User : IIdentifiable, ITimestampedEntity
+public class User : IdentityUser<Guid>, IIdentifiable, ITimestampedEntity
 {
-    [Key]
-    [Column("id")]
-    public Guid Id { get; set; } = Guid.NewGuid();
-
     [Required]
     [MaxLength(50)]
     [Column("first_name")]
@@ -31,25 +28,9 @@ public class User : IIdentifiable, ITimestampedEntity
     public string Occupation { get; set; } = string.Empty;
 
     [Required]
-    [MaxLength(30)]
-    [Column("phone_number")]
-    public string PhoneNumber { get; set; } = string.Empty;
-
-    [Required]
     [MaxLength(50)]
     [Column("ethnicity")]
     public string Ethnicity { get; set; } = string.Empty;
-
-    [Required]
-    [MaxLength(255)]
-    [Column("email_address")]
-    public string EmailAddress { get; set; } = string.Empty;
-
-    [Required]
-    [MinLength(8)]
-    [MaxLength(255)]
-    [Column("password_hash")]
-    public string PasswordHash { get; set; } = string.Empty;
 
     [Required]
     [Column("created_at")]
