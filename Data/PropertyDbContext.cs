@@ -1,17 +1,19 @@
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using RentEZApi.Models;
 using RentEZApi.Models.Entities;
 
 namespace RentEZApi.Data;
 
-public class PropertyDbContext : DbContext
+public class PropertyDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
 {
     public PropertyDbContext(DbContextOptions<PropertyDbContext> options) 
         : base(options)
     {
     }
 
-    public DbSet<User> Users { get; set; } = null!;
+    // public DbSet<User> Users { get; set; } = null!;
     public DbSet<DocuSealPDFTemplate> DocuSealPDFTemplates { get; set; } = null!;
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
@@ -24,34 +26,25 @@ public class PropertyDbContext : DbContext
         base.OnModelCreating(modelBuilder);
 
         ConfigureTimestamps(modelBuilder);
+        
+        modelBuilder.Entity<User>().ToTable("Users");
 
         modelBuilder.Entity<User>(entity =>
         {
             // From IdentityUser
-            entity.Property(e => e.Id).HasColumnName("id");
-            entity.Property(e => e.Email).HasColumnName("email_address").HasMaxLength(256).IsRequired();
-            entity.Property(e => e.UserName).HasColumnName("user_name").HasMaxLength(256);
-            entity.Property(e => e.NormalizedEmail).HasColumnName("normalized_email").HasMaxLength(256);
-            entity.Property(e => e.NormalizedUserName).HasColumnName("normalized_user_name").HasMaxLength(256);
-            entity.Property(e => e.SecurityStamp).HasColumnName("security_stamp");
-            entity.Property(e => e.ConcurrencyStamp).HasColumnName("concurrency_stamp");
-            entity.Property(e => e.AccessFailedCount).HasColumnName("access_failed_count");
-            entity.Property(e => e.EmailConfirmed).HasColumnName("email_confirmed");
-            entity.Property(e => e.LockoutEnabled).HasColumnName("lockout_enabled");
-            entity.Property(e => e.LockoutEnd).HasColumnName("lockout_end");
-            entity.Property(e => e.PhoneNumberConfirmed).HasColumnName("phone_number_confirmed");
-            entity.Property(e => e.TwoFactorEnabled).HasColumnName("two_factor_enabled");
+            entity.Property(e => e.Email).HasMaxLength(256).IsRequired();
+            entity.Property(e => e.UserName).HasMaxLength(256);
+            entity.Property(e => e.NormalizedEmail).HasMaxLength(256);
+            entity.Property(e => e.NormalizedUserName).HasMaxLength(256);
 
             // Constraint
-            entity.HasIndex(e => e.Email).IsUnique();
             entity.ToTable(t =>
                 t.HasCheckConstraint(
-                    "CK_User_Age", "age >= 18 AND age <= 120"
+                    "CK_User_Age", "\"Age\" >= 18 AND \"Age\" <= 120"
                 ));
 
-            entity.Property(e => e.PhoneNumber).HasColumnName("phone_number").HasMaxLength(30);
+            entity.Property(e => e.PhoneNumber).HasMaxLength(30);
             entity.Property(e => e.PasswordHash)
-                .HasColumnName("password_hash")
                 .HasColumnType("text")
                 .IsRequired();
         });
@@ -90,10 +83,6 @@ public class PropertyDbContext : DbContext
                     builder.Property(nameof(ITimestampedEntity.CreatedAt))
                         .HasDefaultValueSql("NOW()")
                         .ValueGeneratedOnAdd();
-                    
-                    builder.Property(nameof(ITimestampedEntity.UpdatedAt))
-                        .HasDefaultValueSql("NOW()")
-                        .ValueGeneratedOnAddOrUpdate();
                 });
             }
         }
