@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using RentEZApi.Exceptions;
 using RentEZApi.Models.DTOs;
@@ -18,14 +19,19 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("login")]
+    [AllowAnonymous]
     // [ValidateAntiForgeryToken]
     public async Task<IActionResult> Login(UserAuthDto request)
     {
         try
         {
             var user = await _userService.GetUserByEmailAsync(request.EmailAddress);
-            await _userService.VerifyPasswordAsync(user.PasswordHash, request.Password);
-            return Accepted(new { message = "Login Successful" });
+
+            if (string.IsNullOrWhiteSpace(user.PasswordHash))
+                return UserUnauthorized("Invalid credentials", "Login Failed");
+
+            _userService.VerifyPassword(user.PasswordHash, request.Password);
+            return Ok(new { message = "Login Successful" });
         }
         catch (UserNotFoundException ex)
         {
@@ -45,6 +51,7 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("register")]
+    [AllowAnonymous]
     public async Task<ActionResult> Register(CreaterUserDto request)
     {
         if (!ModelState.IsValid)
