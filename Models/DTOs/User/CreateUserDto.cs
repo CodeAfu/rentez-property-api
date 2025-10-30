@@ -1,8 +1,8 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace RentEZApi.Models.DTOs;
+namespace RentEZApi.Models.DTOs.User;
 
-public class CreaterUserDto
+public class CreateUserDto
 {
     public required string FirstName { get; set; }
     public required string LastName { get; set; }

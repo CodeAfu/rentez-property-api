@@ -40,7 +40,7 @@ public class PropertyDbContext : IdentityDbContext<User, IdentityRole<Guid>, Gui
             // Constraint
             entity.ToTable(t =>
                 t.HasCheckConstraint(
-                    "CK_User_Age", "\"Age\" >= 18 AND \"Age\" <= 120"
+                    "CK_User_Age", "\"Age\" IS NULL OR (\"Age\" >= 18 AND \"Age\" <= 120)"
                 ));
 
             entity.Property(e => e.PhoneNumber).HasMaxLength(30);

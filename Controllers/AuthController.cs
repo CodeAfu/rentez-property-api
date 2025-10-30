@@ -1,7 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using RentEZApi.Exceptions;
-using RentEZApi.Models.DTOs;
+using RentEZApi.Models.DTOs.Auth;
+using RentEZApi.Models.DTOs.User;
 using RentEZApi.Services;
 
 namespace RentEZApi.Controllers;
@@ -10,34 +11,35 @@ namespace RentEZApi.Controllers;
 [Route("api/[controller]")]
 public class AuthController : ControllerBase
 {
-    private readonly UsersService _userService;
+    private readonly UsersService _usersService;
+    private readonly JwtService _jwtService;
     private readonly string unknownErrorMessage = "Unknown error occurred";
 
-    public AuthController(UsersService userService)
+    public AuthController(UsersService userService, JwtService jwtService)
     {
-        _userService = userService;
+        _usersService = userService;
+        _jwtService = jwtService;
     }
 
     [HttpPost("login")]
     [AllowAnonymous]
     // [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Login(UserAuthDto request)
+    public async Task<IActionResult> Login([FromBody] LoginRequestDto request)
     {
         try
         {
-            var user = await _userService.GetUserByEmailAsync(request.EmailAddress);
-
-            if (string.IsNullOrWhiteSpace(user.PasswordHash))
-                return UserUnauthorized("Invalid credentials", "Login Failed");
-
-            _userService.VerifyPassword(user.PasswordHash, request.Password);
-            return Ok(new { message = "Login Successful" });
+            var response = await _jwtService.Authenticate(request);
+            return Ok(response);
         }
         catch (UserNotFoundException ex)
         {
             return UserUnauthorized(ex.Message, "Login Failed");
         }
         catch (InvalidPasswordException ex)
+        {
+            return UserUnauthorized(ex.Message, "Login Failed");
+        }
+        catch (UserNotAuthorizedException ex)
         {
             return UserUnauthorized(ex.Message, "Login Failed");
         }
@@ -52,7 +54,7 @@ public class AuthController : ControllerBase
 
     [HttpPost("register")]
     [AllowAnonymous]
-    public async Task<ActionResult> Register(CreaterUserDto request)
+    public async Task<IActionResult> Register([FromBody] RegisterUserDto request)
     {
         if (!ModelState.IsValid)
             return BadRequest(new
@@ -68,12 +70,21 @@ public class AuthController : ControllerBase
 
         try
         {
-            var createdUser = await _userService.CreateUserAsync(request);
-            return Ok(createdUser);
+            var createdUser = await _usersService.RegisterUserAsync(request);
+            return CreatedAtAction(
+                nameof(UsersController.GetUser),
+                "Users",
+                new { id = createdUser.Id },
+                createdUser
+            );
         }
         catch (DuplicateEmailException ex)
         {
             return BadRequest(new { error = ex.Message, message = "Email already exists" });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message, message = "Something went wrong" });
         }
         catch (Exception ex)
         {

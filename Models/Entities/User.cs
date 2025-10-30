@@ -7,23 +7,18 @@ namespace RentEZApi.Models.Entities;
 [Table("Users")]
 public class User : IdentityUser<Guid>, IIdentifiable, ITimestampedEntity
 {
-    // [Required]
     [MaxLength(50)]
     public string FirstName { get; set; } = string.Empty;
 
-    // [Required]
     [MaxLength(50)]
     public string LastName { get; set; } = string.Empty;
 
-    // [Required]
     [Range(18, 120)]
-    public int Age { get; set; }
+    public int? Age { get; set; }
 
-    // [Required]
     [MaxLength(100)]
     public string Occupation { get; set; } = string.Empty;
 
-    // [Required]
     [MaxLength(50)]
     public string Ethnicity { get; set; } = string.Empty;
 

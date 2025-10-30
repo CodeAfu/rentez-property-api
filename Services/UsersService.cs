@@ -1,19 +1,21 @@
 using RentEZApi.Data;
-using RentEZApi.Models.DTOs;
+using RentEZApi.Models.DTOs.User;
 using RentEZApi.Models.Entities;
 using Microsoft.EntityFrameworkCore;
-using Models.DTOs;
 using RentEZApi.Exceptions;
+using Microsoft.AspNetCore.Identity;
 
 namespace RentEZApi.Services;
 
 public class UsersService
 {
     private readonly PropertyDbContext _dbContext;
+    private readonly UserManager<User> _userManager;
 
-    public UsersService(PropertyDbContext dbContext)
+    public UsersService(PropertyDbContext dbContext, UserManager<User> userManager)
     {
         _dbContext = dbContext;
+        _userManager = userManager;
     }
 
     public async Task<List<User>> GetUsersAsync() 
@@ -21,15 +23,6 @@ public class UsersService
 
     public async Task<User?> GetUserAsync(Guid id) 
             => await _dbContext.Users.FirstOrDefaultAsync(u => u.Id == id);
-
-    public async Task<User> GetUserByEmailAsync(string emailAddress)
-    {
-        var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.Email == emailAddress);
-        if (user == null)
-            throw new UserNotFoundException($"User with email '{emailAddress} not found");
-
-        return user;
-    }
 
     public async Task<User> DeleteUserAsync(Guid id)
     {
@@ -44,27 +37,65 @@ public class UsersService
         return user;
     }
 
-    public async Task<User> CreateUserAsync(CreaterUserDto request)
+    public async Task<User> CreateUserAsync(CreateUserDto request)
     {
-        if (await EmailExistsAsync(request.Email))
+        if (await CheckEmailExistsAsync(request.Email))
             throw new DuplicateEmailException(request.Email);
-            
+
         var user = new User
         {
+            UserName = request.Email,
+            Email = request.Email,
             FirstName = request.FirstName,
             LastName = request.LastName,
             Age = request.Age,
             PhoneNumber = request.PhoneNumber,
             Occupation = request.Occupation,
             Ethnicity = request.Ethnicity,
+            PasswordHash = AuthorizationService.HashPassword(request.Password),
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow,
+        };
+
+        var result = await _userManager.CreateAsync(user, request.Password);
+
+        if (!result.Succeeded)
+        {
+            throw new InvalidOperationException(
+                string.Join(", ", result.Errors.Select(e => e.Description))
+            );
+        }
+
+        await _userManager.AddToRoleAsync(user, "User");
+
+        return user;
+    }
+
+    public async Task<User> RegisterUserAsync(RegisterUserDto request)
+    {
+        if (await CheckEmailExistsAsync(request.Email))
+            throw new DuplicateEmailException(request.Email);
+
+        var user = new User
+        {
+            UserName = request.Email,
             Email = request.Email,
             PasswordHash = AuthorizationService.HashPassword(request.Password),
             CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            UpdatedAt = DateTime.UtcNow,
         };
 
-        await _dbContext.Users.AddAsync(user);
-        await _dbContext.SaveChangesAsync();
+        var result = await _userManager.CreateAsync(user, request.Password);
+
+        if (!result.Succeeded)
+        {
+            throw new InvalidOperationException(
+                string.Join(", ", result.Errors.Select(e => e.Description))
+            );
+        }
+
+        await _userManager.AddToRoleAsync(user, "User");
+
         return user;
     }
 
@@ -102,7 +133,7 @@ public class UsersService
         return user;
     }
 
-    public async Task<bool> EmailExistsAsync(string email)
+    public async Task<bool> CheckEmailExistsAsync( string email)
             => await _dbContext.Users.FirstOrDefaultAsync(u => u.Email == email) != null;
 
     public void VerifyPassword(string passwordHash, string password)
