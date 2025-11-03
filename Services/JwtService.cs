@@ -2,7 +2,9 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using RentEZApi.Data;
 using RentEZApi.Exceptions;
 using RentEZApi.Models.DTOs.Auth;
 using RentEZApi.Models.Entities;
@@ -14,11 +16,18 @@ public class JwtService
     private readonly ConfigService _config;
     private readonly UsersService _usersService;
     private readonly UserManager<User> _userManager;
-    public JwtService(UsersService usersService, ConfigService config, UserManager<User> userManager)
+    private readonly PropertyDbContext _dbContext;
+
+    public JwtService(
+        UsersService usersService,
+        ConfigService config,
+        UserManager<User> userManager,
+        PropertyDbContext dbContext)
     {
         _usersService = usersService;
         _config = config;
         _userManager = userManager;
+        _dbContext = dbContext;
     }
 
     public async Task<LoginResponseDto?> Authenticate(LoginRequestDto request)

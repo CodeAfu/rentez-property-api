@@ -10,9 +10,11 @@ public class ConfigService
         _config = config;
     }
 
+    public string? Get(string key) => _config[key];
     public string GetEnvironment() => _config["ASPNETCORE_ENVIRONMENT"] ?? "Production";
     public bool IsDevelopment() => _config["ASPNETCORE_ENVIRONMENT"] == "Development";
     public string? GetDocuSealAuthToken() => _config["DocuSealAuthToken"];
+    public string? GetTestEmail() => _config["TestEmail"];
     public JwtInfo GetJwtInfo()
     {
         var tokenValidityMins = int.Parse(_config["Jwt:TokenValidityMins"] 

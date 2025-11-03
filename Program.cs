@@ -165,6 +165,7 @@ builder.Services.AddSingleton<ConfigService>();
 builder.Services.AddScoped<JwtService>();
 builder.Services.AddScoped<UsersService>();
 builder.Services.AddScoped<AuthorizationService>();
+builder.Services.AddScoped<RefreshTokenService>();
 builder.Services.AddScoped<DocuSealService>();
     
 builder.Services.AddEndpointsApiExplorer();

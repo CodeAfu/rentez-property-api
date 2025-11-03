@@ -13,8 +13,8 @@ public class PropertyDbContext : IdentityDbContext<User, IdentityRole<Guid>, Gui
     {
     }
 
-    // public DbSet<User> Users { get; set; } = null!;
     public DbSet<DocuSealPDFTemplate> DocuSealPDFTemplates { get; set; } = null!;
+    public DbSet<RefreshToken> RefreshTokens { get; set; } = null!;
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
@@ -47,6 +47,8 @@ public class PropertyDbContext : IdentityDbContext<User, IdentityRole<Guid>, Gui
             entity.Property(e => e.PasswordHash)
                 .HasColumnType("text")
                 .IsRequired();
+                
+            entity.HasIndex(e => e.Email);
         });
 
         modelBuilder.Entity<DocuSealPDFTemplate>(entity =>
@@ -57,6 +59,13 @@ public class PropertyDbContext : IdentityDbContext<User, IdentityRole<Guid>, Gui
                 .OnDelete(DeleteBehavior.Cascade);
                 
             entity.HasIndex(e => e.TemplateId).IsUnique();
+        });
+
+        modelBuilder.Entity<RefreshToken>(entity =>
+        {
+            entity.HasIndex(e => e.TokenHash);
+            entity.HasIndex(e => e.UserId);
+            entity.HasIndex(e => e.ExpiresAt);
         });
     }
 

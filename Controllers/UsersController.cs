@@ -21,19 +21,19 @@ public class UsersController : ControllerBase
         _configService = configService;
     }
 
-    [Authorize(AuthenticationSchemes = "Bearer", Policy = "AdminOnly")]
     [HttpGet]
+    [Authorize(AuthenticationSchemes = "Bearer", Policy = "AdminOnly")]
     public async Task<IActionResult> GetUsers()
     {
         var users = await _userService.GetUsersAsync();
         if (users == null) 
             return NotFound(new { message = "Users not found" });
-        
+
         return Ok(users);
     }
 
     [HttpGet("{id}", Name = "GetUser")]
-    [Authorize(Policy = "UserOrAdmin")]
+    [Authorize(AuthenticationSchemes = "Bearer", Policy = "UserOrAdmin")]
     public async Task<IActionResult> GetUser(Guid id)
     {
         var user = await _userService.GetUserAsync(id);
@@ -44,7 +44,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Policy = "AdminOnly")]
+    [Authorize(AuthenticationSchemes = "Bearer", Policy = "AdminOnly")]
     public async Task<IActionResult> CreateUser(CreateUserDto request)
     {
         if (!ModelState.IsValid)
@@ -82,7 +82,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpDelete("{id}")]
-    [Authorize(Policy = "AdminOnly")]
+    [Authorize(AuthenticationSchemes = "Bearer", Policy = "AdminOnly")]
     public async Task<IActionResult> DeleteUser(Guid id)
     {
         try
@@ -104,7 +104,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpPut("{id}")]
-    [Authorize(Policy = "UserOrAdmin")]
+    [Authorize(AuthenticationSchemes = "Bearer", Policy = "UserOrAdmin")]
     public async Task<IActionResult> EditUser(Guid id, EditUserDto request)
     {
         try

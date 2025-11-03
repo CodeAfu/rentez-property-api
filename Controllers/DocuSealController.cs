@@ -1,4 +1,4 @@
-using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using RentEZApi.Models.DTOs.DocuSeal;
 using RentEZApi.Services;
@@ -7,6 +7,7 @@ namespace RentEZApi.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+
 public class DocuSealController : ControllerBase
 {
     private readonly DocuSealService _docuSealService;
@@ -19,16 +20,30 @@ public class DocuSealController : ControllerBase
     }
 
 
-[HttpPost("builder-token")]
+    [HttpPost("builder-token")]
+    [Authorize(AuthenticationSchemes = "Bearer", Policy = "UserOrAdmin")]
     public IActionResult GetBuilderToken()
     {
         // var userEmail = User.FindFirst(ClaimTypes.Email)?.Value;
-        var userEmail = "ibrahim.afzal1999+test@gmail.com";
+        // ===== Temp =====
+        var userEmail = _config.GetTestEmail();
+        if (userEmail == null)
+        {
+            Console.WriteLine("Environment variable 'TestEmail' is not defined");
+            return StatusCode(StatusCodes.Status500InternalServerError,
+                new
+                {
+                    error = "Environment variable 'TestEmail' is not defined",
+                    message = "Unknown error occurred",
+                });
+        }
+        // ===== Temp =====
         var tokenString = _docuSealService.GetBuilderToken(userEmail);
         return Ok(new { token = tokenString });
     }
 
     [HttpGet("templates")]
+    [Authorize(AuthenticationSchemes = "Bearer", Policy = "UserOrAdmin")]
     public async Task<ActionResult> GetAllTemplates()
     {
         try
@@ -54,6 +69,7 @@ public class DocuSealController : ControllerBase
     }
 
     [HttpGet("templates/{templateId}")]
+    [Authorize(AuthenticationSchemes = "Bearer", Policy = "UserOrAdmin")]
     public async Task<ActionResult> GetTemplate(string templateId)
     {
         try
@@ -79,6 +95,7 @@ public class DocuSealController : ControllerBase
     }
 
     [HttpPost("templates")]
+    [Authorize(AuthenticationSchemes = "Bearer", Policy = "UserOrAdmin")]
     public async Task<ActionResult> CreateTemplate(PDFDocument document)
     {
         try

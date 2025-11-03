@@ -1,10 +1,8 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using Microsoft.EntityFrameworkCore;
 
 namespace RentEZApi.Models.Entities;
 
-[Index(nameof(TemplateId))]
 public class DocuSealPDFTemplate : IIdentifiable, ITimestampedEntity
 {
     [Key]
