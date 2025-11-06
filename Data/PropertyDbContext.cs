@@ -1,18 +1,20 @@
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using RentEZApi.Models;
 using RentEZApi.Models.Entities;
 
 namespace RentEZApi.Data;
 
-public class PropertyDbContext : DbContext
+public class PropertyDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
 {
     public PropertyDbContext(DbContextOptions<PropertyDbContext> options) 
         : base(options)
     {
     }
 
-    public DbSet<User> Users { get; set; } = null!;
     public DbSet<DocuSealPDFTemplate> DocuSealPDFTemplates { get; set; } = null!;
+    public DbSet<RefreshToken> RefreshTokens { get; set; } = null!;
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
@@ -24,14 +26,29 @@ public class PropertyDbContext : DbContext
         base.OnModelCreating(modelBuilder);
 
         ConfigureTimestamps(modelBuilder);
+        
+        modelBuilder.Entity<User>().ToTable("Users");
 
         modelBuilder.Entity<User>(entity =>
         {
-            entity.HasIndex(e => e.EmailAddress).IsUnique();
+            // From IdentityUser
+            entity.Property(e => e.Email).HasMaxLength(256).IsRequired();
+            entity.Property(e => e.UserName).HasMaxLength(256);
+            entity.Property(e => e.NormalizedEmail).HasMaxLength(256);
+            entity.Property(e => e.NormalizedUserName).HasMaxLength(256);
+
+            // Constraint
             entity.ToTable(t =>
                 t.HasCheckConstraint(
-                    "CK_User_Age", "age >= 18 AND age <= 120"
+                    "CK_User_Age", "\"Age\" IS NULL OR (\"Age\" >= 18 AND \"Age\" <= 120)"
                 ));
+
+            entity.Property(e => e.PhoneNumber).HasMaxLength(30);
+            entity.Property(e => e.PasswordHash)
+                .HasColumnType("text")
+                .IsRequired();
+                
+            entity.HasIndex(e => e.Email);
         });
 
         modelBuilder.Entity<DocuSealPDFTemplate>(entity =>
@@ -42,6 +59,13 @@ public class PropertyDbContext : DbContext
                 .OnDelete(DeleteBehavior.Cascade);
                 
             entity.HasIndex(e => e.TemplateId).IsUnique();
+        });
+
+        modelBuilder.Entity<RefreshToken>(entity =>
+        {
+            entity.HasIndex(e => e.TokenHash);
+            entity.HasIndex(e => e.UserId);
+            entity.HasIndex(e => e.ExpiresAt);
         });
     }
 
@@ -68,15 +92,11 @@ public class PropertyDbContext : DbContext
                     builder.Property(nameof(ITimestampedEntity.CreatedAt))
                         .HasDefaultValueSql("NOW()")
                         .ValueGeneratedOnAdd();
-                    
-                    builder.Property(nameof(ITimestampedEntity.UpdatedAt))
-                        .HasDefaultValueSql("NOW()")
-                        .ValueGeneratedOnAddOrUpdate();
                 });
             }
         }
     }
-
+    
     private void UpdateTimestamps()
     {
         var entries = ChangeTracker.Entries<ITimestampedEntity>()

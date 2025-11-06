@@ -1,8 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
-using Models.DTOs;
+using RentEZApi.Models.DTOs.User;
 using RentEZApi.Exceptions;
-using RentEZApi.Models.DTOs;
 using RentEZApi.Services;
+using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 
 namespace RentEZApi.Controllers;
 
@@ -21,28 +22,19 @@ public class UsersController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult> GetUsers()
+    [Authorize(AuthenticationSchemes = "Bearer", Policy = "AdminOnly")]
+    public async Task<IActionResult> GetUsers()
     {
-        if (_configService.GetEnvironment() != "Development")
-        {
-            return Unauthorized(
-                new
-                {
-                    error = "User does not have permissions to access this endpoint",
-                    message = "Not allowed",
-                }
-            );
-        }
+        var users = await _userService.GetUsersAsync();
+        if (users == null) 
+            return NotFound(new { message = "Users not found" });
 
-        var user = await _userService.GetUsersAsync();
-        if (user == null) 
-            return NotFound(new { message = "User not found" });
-        
-        return Ok(user);
+        return Ok(users);
     }
 
-    [HttpGet("{id}")]
-    public async Task<ActionResult> GetUser(Guid id)
+    [HttpGet("{id}", Name = "GetUser")]
+    [Authorize(AuthenticationSchemes = "Bearer", Policy = "UserOrAdmin")]
+    public async Task<IActionResult> GetUser(Guid id)
     {
         var user = await _userService.GetUserAsync(id);
         if (user == null) 
@@ -52,7 +44,8 @@ public class UsersController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<ActionResult> CreateUser(CreaterUserDto request)
+    [Authorize(AuthenticationSchemes = "Bearer", Policy = "AdminOnly")]
+    public async Task<IActionResult> CreateUser(CreateUserDto request)
     {
         if (!ModelState.IsValid)
             return BadRequest(new
@@ -89,7 +82,8 @@ public class UsersController : ControllerBase
     }
 
     [HttpDelete("{id}")]
-    public async Task<ActionResult> DeleteUser(Guid id)
+    [Authorize(AuthenticationSchemes = "Bearer", Policy = "AdminOnly")]
+    public async Task<IActionResult> DeleteUser(Guid id)
     {
         try
         {
@@ -110,10 +104,19 @@ public class UsersController : ControllerBase
     }
 
     [HttpPut("{id}")]
-    public async Task<ActionResult> EditUser(Guid id, EditUserDto request)
+    [Authorize(AuthenticationSchemes = "Bearer", Policy = "UserOrAdmin")]
+    public async Task<IActionResult> EditUser(Guid id, EditUserDto request)
     {
         try
         {
+            var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var isAdmin = User.IsInRole("Admin");
+            
+            if (!isAdmin && currentUserId != id.ToString())
+            {
+                return Forbid();
+            }
+            
             var edittedUser = await _userService.EditUserAsync(id, request);
             return Ok(edittedUser);
         }

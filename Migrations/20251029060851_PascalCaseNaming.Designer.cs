@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using RentEZApi.Data;
@@ -11,9 +12,11 @@ using RentEZApi.Data;
 namespace RentEZApi.Migrations
 {
     [DbContext(typeof(PropertyDbContext))]
-    partial class PropertyDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251029060851_PascalCaseNaming")]
+    partial class PascalCaseNaming
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -190,41 +193,7 @@ namespace RentEZApi.Migrations
                     b.HasIndex("TemplateId")
                         .IsUnique();
 
-                    b.ToTable("DocuSealPDFTemplates");
-                });
-
-            modelBuilder.Entity("RentEZApi.Models.Entities.RefreshToken", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime>("ExpiresAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime?>("RevokedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("TokenHash")
-                        .IsRequired()
-                        .HasMaxLength(64)
-                        .HasColumnType("character varying(64)");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ExpiresAt");
-
-                    b.HasIndex("TokenHash");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("RefreshTokens");
+                    b.ToTable("docuseal_pdf_templates");
                 });
 
             modelBuilder.Entity("RentEZApi.Models.Entities.User", b =>
@@ -236,7 +205,7 @@ namespace RentEZApi.Migrations
                     b.Property<int>("AccessFailedCount")
                         .HasColumnType("integer");
 
-                    b.Property<int?>("Age")
+                    b.Property<int>("Age")
                         .HasColumnType("integer");
 
                     b.Property<string>("ConcurrencyStamp")
@@ -323,9 +292,9 @@ namespace RentEZApi.Migrations
                         .IsUnique()
                         .HasDatabaseName("UserNameIndex");
 
-                    b.ToTable("Users", null, t =>
+                    b.ToTable("AspNetUsers", null, t =>
                         {
-                            t.HasCheckConstraint("CK_User_Age", "\"Age\" IS NULL OR (\"Age\" >= 18 AND \"Age\" <= 120)");
+                            t.HasCheckConstraint("CK_User_Age", "\"Age\" >= 18 AND \"Age\" <= 120");
                         });
                 });
 
@@ -389,17 +358,6 @@ namespace RentEZApi.Migrations
                         .IsRequired();
 
                     b.Navigation("Owner");
-                });
-
-            modelBuilder.Entity("RentEZApi.Models.Entities.RefreshToken", b =>
-                {
-                    b.HasOne("RentEZApi.Models.Entities.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("RentEZApi.Models.Entities.User", b =>
