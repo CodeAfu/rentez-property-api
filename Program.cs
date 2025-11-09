@@ -8,6 +8,8 @@ using RentEZApi.Services;
 using Scalar.AspNetCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.VisualBasic;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -185,8 +187,12 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 
+
 using (var scope = app.Services.CreateScope())
 {
+    var db = scope.ServiceProvider.GetRequiredService<PropertyDbContext>();
+    await db.Database.MigrateAsync();
+
     var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole<Guid>>>();
     string[] roles = { "User", "Admin" };
     foreach (var role in roles)

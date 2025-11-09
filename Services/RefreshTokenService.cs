@@ -1,6 +1,5 @@
 using System.Security.Cryptography;
 using System.Text;
-using Microsoft.AspNetCore.Mvc;
 using RentEZApi.Data;
 using RentEZApi.Models.Entities;
 
