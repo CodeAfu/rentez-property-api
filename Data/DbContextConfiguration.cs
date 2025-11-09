@@ -10,7 +10,7 @@ public static class DbContextConfiguration
 
             var configuration = new ConfigurationBuilder()
                 .SetBasePath(Directory.GetCurrentDirectory())
-                .AddJsonFile("appsettings.json")
+                .AddJsonFile("appsettings.json", optional: true)
                 .AddJsonFile($"appsettings.{environment}.json", optional: true)
                 .Build();
             
