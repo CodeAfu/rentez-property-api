@@ -9,7 +9,6 @@ using Scalar.AspNetCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.VisualBasic;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -20,6 +19,9 @@ var jsonOptions = new JsonSerializerOptions
 };
 
 var allowedOrigins = builder.Configuration.GetSection("AllowedOrigins").Get<string[]>();
+
+builder.Services.AddDbContext<PropertyDbContext>(options => 
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddCors(options =>
 {
