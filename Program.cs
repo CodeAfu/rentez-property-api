@@ -9,7 +9,6 @@ using Scalar.AspNetCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.VisualBasic;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -30,6 +29,12 @@ builder.Services.AddCors(options =>
               .AllowAnyMethod()
               .AllowCredentials();
     });
+});
+
+builder.Services.AddDbContext<PropertyDbContext>(options =>
+{
+    var connString = builder.Configuration.GetConnectionString("DefaultConnection") ?? Environment.GetEnvironmentVariable("DATABASE_URL");
+    options.UseNpgsql(connString);
 });
 
 builder.Services.AddSingleton(jsonOptions);
