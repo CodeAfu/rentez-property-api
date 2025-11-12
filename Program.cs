@@ -31,11 +31,8 @@ builder.Services.AddCors(options =>
     });
 });
 
-builder.Services.AddDbContext<PropertyDbContext>(options =>
-{
-    var connString = builder.Configuration.GetConnectionString("DefaultConnection") ?? Environment.GetEnvironmentVariable("DATABASE_URL");
-    options.UseNpgsql(connString);
-});
+builder.Services.AddDbContext<PropertyDbContext>(options => 
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddSingleton(jsonOptions);
 

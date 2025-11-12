@@ -14,6 +14,6 @@ ENV ASPNETCORE_URLS=http://+:8080
 USER $APP_UID
 
 COPY --from=build /app/publish .
-RUN ls -la && cat appsettings.json || echo "appsettings.json not found"
+# RUN ls -la && cat appsettings.json || echo "appsettings.json not found"
 
 ENTRYPOINT ["dotnet", "RentEZApi.dll"]
