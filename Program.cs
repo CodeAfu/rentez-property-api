@@ -124,7 +124,7 @@ builder.Services.AddAuthentication(options =>
             IssuerSigningKey = new SymmetricSecurityKey(
                 Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!)),
             RoleClaimType = "http://schemas.microsoft.com/ws/2008/06/identity/claims/role"
-            };
+        };
     });
 
 builder.Services.AddAuthorization(options =>

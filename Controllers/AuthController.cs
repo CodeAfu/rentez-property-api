@@ -157,7 +157,7 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("logout")]
-    [Authorize]
+    [Authorize(AuthenticationSchemes = "Bearer", Policy = "UserOrAdmin")]
     public async Task<IActionResult> Logout()
     {
         try
