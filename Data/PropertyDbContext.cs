@@ -15,6 +15,7 @@ public class PropertyDbContext : IdentityDbContext<User, IdentityRole<Guid>, Gui
 
     public DbSet<DocuSealPDFTemplate> DocuSealPDFTemplates { get; set; } = null!;
     public DbSet<RefreshToken> RefreshTokens { get; set; } = null!;
+    public DbSet<Property> Property { get; set; } = null!;
 
     // protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     // {

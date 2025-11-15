@@ -91,28 +91,28 @@ builder.Services.AddAuthentication(options =>
     {
         options.RequireHttpsMetadata = false;
         options.SaveToken = true;
-        options.Events = new JwtBearerEvents
-        {        
-            OnTokenValidated = context =>  // Add this
-            {
-                Console.WriteLine("=== TOKEN VALIDATED ===");
-                var claims = context.Principal?.Claims.Select(c => $"{c.Type} = {c.Value}");
-                Console.WriteLine(string.Join("\n", claims ?? Array.Empty<string>()));
-                Console.WriteLine($"IsInRole Admin: {context.Principal?.IsInRole("Admin")}");
-                Console.WriteLine("======================");
-                return Task.CompletedTask;
-            },
-            OnAuthenticationFailed = context =>
-            {
-                Console.WriteLine($"Auth failed: {context.Exception}");
-                return Task.CompletedTask;
-            },
-            OnChallenge = context =>
-            {
-                Console.WriteLine($"Auth challenge: {context.Error}, {context.ErrorDescription}");
-                return Task.CompletedTask;
-            }
-        };
+        // options.Events = new JwtBearerEvents
+        // {        
+        //     OnTokenValidated = context =>  // Add this
+        //     {
+        //         Console.WriteLine("=== TOKEN VALIDATED ===");
+        //         var claims = context.Principal?.Claims.Select(c => $"{c.Type} = {c.Value}");
+        //         Console.WriteLine(string.Join("\n", claims ?? Array.Empty<string>()));
+        //         Console.WriteLine($"IsInRole Admin: {context.Principal?.IsInRole("Admin")}");
+        //         Console.WriteLine("======================");
+        //         return Task.CompletedTask;
+        //     },
+        //     OnAuthenticationFailed = context =>
+        //     {
+        //         Console.WriteLine($"Auth failed: {context.Exception}");
+        //         return Task.CompletedTask;
+        //     },
+        //     OnChallenge = context =>
+        //     {
+        //         Console.WriteLine($"Auth challenge: {context.Error}, {context.ErrorDescription}");
+        //         return Task.CompletedTask;
+        //     }
+        // };
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,

@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using RentEZApi.Data;
@@ -11,9 +12,11 @@ using RentEZApi.Data;
 namespace RentEZApi.Migrations
 {
     [DbContext(typeof(PropertyDbContext))]
-    partial class PropertyDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251115054805_AddPropertyTable")]
+    partial class AddPropertyTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -191,73 +194,6 @@ namespace RentEZApi.Migrations
                         .IsUnique();
 
                     b.ToTable("DocuSealPDFTemplates");
-                });
-
-            modelBuilder.Entity("RentEZApi.Models.Entities.Property", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Address")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
-                    b.Property<string>("City")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasDefaultValueSql("NOW()");
-
-                    b.Property<bool?>("DepositRequired")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
-                    b.PrimitiveCollection<string[]>("Images")
-                        .IsRequired()
-                        .HasColumnType("text[]");
-
-                    b.PrimitiveCollection<string[]>("LeaseTermCategory")
-                        .IsRequired()
-                        .HasColumnType("text[]");
-
-                    b.PrimitiveCollection<string[]>("PreferredOccupation")
-                        .IsRequired()
-                        .HasColumnType("text[]");
-
-                    b.PrimitiveCollection<string[]>("PreferredRaces")
-                        .IsRequired()
-                        .HasColumnType("text[]");
-
-                    b.PrimitiveCollection<string[]>("RoomType")
-                        .IsRequired()
-                        .HasColumnType("text[]");
-
-                    b.Property<string>("State")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Property");
                 });
 
             modelBuilder.Entity("RentEZApi.Models.Entities.RefreshToken", b =>
@@ -458,37 +394,6 @@ namespace RentEZApi.Migrations
                         .IsRequired();
 
                     b.Navigation("Owner");
-                });
-
-            modelBuilder.Entity("RentEZApi.Models.Entities.Property", b =>
-                {
-                    b.OwnsOne("RentEZApi.Models.DTOs.Property.BillsIncluded", "BillsIncluded", b1 =>
-                        {
-                            b1.Property<Guid>("PropertyId")
-                                .HasColumnType("uuid");
-
-                            b1.Property<bool?>("Electricity")
-                                .HasColumnType("boolean");
-
-                            b1.Property<bool?>("Gas")
-                                .HasColumnType("boolean");
-
-                            b1.Property<bool?>("Water")
-                                .HasColumnType("boolean");
-
-                            b1.Property<bool?>("Wifi")
-                                .HasColumnType("boolean");
-
-                            b1.HasKey("PropertyId");
-
-                            b1.ToTable("Property");
-
-                            b1.WithOwner()
-                                .HasForeignKey("PropertyId");
-                        });
-
-                    b.Navigation("BillsIncluded")
-                        .IsRequired();
                 });
 
             modelBuilder.Entity("RentEZApi.Models.Entities.RefreshToken", b =>
