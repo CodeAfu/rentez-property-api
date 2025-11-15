@@ -7,7 +7,6 @@ namespace RentEZApi.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-
 public class DocuSealController : ControllerBase
 {
     private readonly DocuSealService _docuSealService;
@@ -49,12 +48,10 @@ public class DocuSealController : ControllerBase
         try
         {
             var result = await _docuSealService.GetAllTemplates();
-            
             if (!result.IsSuccessful)
             {
                 return StatusCode((int)result.StatusCode, result.ErrorMessage);
             }
-            
             return Ok(result.Content);
         }
         catch (Exception ex)
@@ -75,12 +72,10 @@ public class DocuSealController : ControllerBase
         try
         {
             var result = await _docuSealService.GetTemplate(templateId);
-            
             if (!result.IsSuccessful)
             {
                 return StatusCode((int)result.StatusCode, result.ErrorMessage);
             }
-            
             return Ok(result.Content);
         }
         catch (Exception ex)

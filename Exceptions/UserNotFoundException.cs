@@ -2,7 +2,6 @@ namespace RentEZApi.Exceptions;
 
 public class UserNotFoundException : Exception
 {
-
     public UserNotFoundException()
         : base("User not found") { }
     public UserNotFoundException(Guid id)

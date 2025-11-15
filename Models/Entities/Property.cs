@@ -5,18 +5,20 @@ using RentEZApi.Models.DTOs.Property;
 
 namespace RentEZApi.Models.Entities;
 
-public class Property : IIdentifiable, ITimestampedEntity
+public class Property : IIdentifiable, ITimestampedEntity, IUnique
 {
     [Key]
     public Guid Id { get; set; }
 
+    [MaxLength(64)]
+    public required string Hash { get; set; }
+
     [MaxLength(50)]
     public string Title { get; set; } = string.Empty;
 
-    [MaxLength(50)]
     public string Description { get; set; } = string.Empty;
 
-    [MaxLength(50)]
+    [MaxLength(100)]
     public string Address { get; set; } = string.Empty;
 
     [MaxLength(50)]

@@ -31,7 +31,7 @@ builder.Services.AddCors(options =>
     });
 });
 
-builder.Services.AddDbContext<PropertyDbContext>(options => 
+builder.Services.AddDbContext<PropertyDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddSingleton(jsonOptions);
@@ -51,22 +51,20 @@ builder.Services.AddOpenApi("v1", options =>
                 Description = "Enter JWT Bearer token"
             }
         };
-        
         document.SecurityRequirements = new List<Microsoft.OpenApi.Models.OpenApiSecurityRequirement>
         {
             new()
             {
-                [new Microsoft.OpenApi.Models.OpenApiSecurityScheme 
-                { 
-                    Reference = new() 
-                    { 
-                        Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme, 
-                        Id = "Bearer" 
-                    } 
+                [new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+                {
+                    Reference = new()
+                    {
+                        Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
+                        Id = "Bearer"
+                    }
                 }] = []
             }
         };
-        
         return Task.CompletedTask;
     });
 });
@@ -168,10 +166,11 @@ builder.Services.AddSingleton<ConfigService>();
 
 builder.Services.AddScoped<JwtService>();
 builder.Services.AddScoped<UsersService>();
+builder.Services.AddScoped<PropertyService>();
 builder.Services.AddScoped<AuthorizationService>();
 builder.Services.AddScoped<RefreshTokenService>();
 builder.Services.AddScoped<DocuSealService>();
-    
+
 builder.Services.AddEndpointsApiExplorer();
 
 var app = builder.Build();
