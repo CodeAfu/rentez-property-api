@@ -22,6 +22,9 @@ public class User : IdentityUser<Guid>, IIdentifiable, ITimestampedEntity
     [MaxLength(50)]
     public string Ethnicity { get; set; } = string.Empty;
 
+    // Foreign Keys
+    public ICollection<Property> OwnedProperty { get; set; } = new List<Property>();
+
     [Required]
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     public DateTime CreatedAt { get; set; }

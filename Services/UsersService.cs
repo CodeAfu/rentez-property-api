@@ -18,10 +18,10 @@ public class UsersService
         _userManager = userManager;
     }
 
-    public async Task<List<User>> GetUsersAsync() 
+    public async Task<List<User>> GetUsersAsync()
             => await _dbContext.Users.ToListAsync();
 
-    public async Task<User?> GetUserAsync(Guid id) 
+    public async Task<User?> GetUserAsync(Guid id)
             => await _dbContext.Users.FirstOrDefaultAsync(u => u.Id == id);
 
     public async Task<User> DeleteUserAsync(Guid id)
@@ -95,7 +95,6 @@ public class UsersService
         }
 
         await _userManager.AddToRoleAsync(user, "User");
-
         return user;
     }
 
@@ -104,8 +103,6 @@ public class UsersService
         var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.Id == id);
         if (user == null)
             throw new UserNotFoundException(id);
-
-        // TODO: Add Age Validation
 
         if (!string.IsNullOrWhiteSpace(request.FirstName))
             user.FirstName = request.FirstName;
@@ -126,14 +123,11 @@ public class UsersService
             user.Ethnicity = request.Ethnicity;
 
         user.UpdatedAt = DateTime.UtcNow;
-
-        _dbContext.Users.Update(user);
         await _dbContext.SaveChangesAsync();
-
         return user;
     }
 
-    public async Task<bool> CheckEmailExistsAsync( string email)
+    public async Task<bool> CheckEmailExistsAsync(string email)
             => await _dbContext.Users.FirstOrDefaultAsync(u => u.Email == email) != null;
 
     public void VerifyPassword(string passwordHash, string password)

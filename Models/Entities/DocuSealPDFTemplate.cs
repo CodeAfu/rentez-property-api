@@ -23,8 +23,9 @@ public class DocuSealPDFTemplate : IIdentifiable, ITimestampedEntity
     [Required]
     [ForeignKey(nameof(Owner))]
     public Guid OwnerId { get; set; }
-
     public User Owner { get; set; } = null!;
+
+    public Property? Property { get; set; }
 
     [Required]
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]

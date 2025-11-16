@@ -27,6 +27,8 @@ public class Property : IIdentifiable, ITimestampedEntity, IUnique
     [MaxLength(50)]
     public string State { get; set; } = string.Empty;
 
+    public decimal Rent { get; set; }
+
     public string[] Images { get; set; } = Array.Empty<string>();
 
     public bool? DepositRequired { get; set; }
@@ -38,6 +40,15 @@ public class Property : IIdentifiable, ITimestampedEntity, IUnique
     public string[] PreferredRaces { get; set; } = Array.Empty<string>();
     public string[] PreferredOccupation { get; set; } = Array.Empty<string>();
     public string[] LeaseTermCategory { get; set; } = Array.Empty<string>();
+
+    // Navigation
+    [Required]
+    [ForeignKey(nameof(Owner))]
+    public Guid OwnerId { get; set; }
+    public User Owner { get; set; } = null!;
+
+    public Guid? AgreementId { get; set; }
+    public DocuSealPDFTemplate? Agreement { get; set; }
 
     // Timestamp
     [Required]

@@ -8,7 +8,7 @@ namespace RentEZApi.Data;
 
 public class PropertyDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
 {
-    public PropertyDbContext(DbContextOptions<PropertyDbContext> options) 
+    public PropertyDbContext(DbContextOptions<PropertyDbContext> options)
         : base(options)
     {
     }
@@ -27,7 +27,6 @@ public class PropertyDbContext : IdentityDbContext<User, IdentityRole<Guid>, Gui
         base.OnModelCreating(modelBuilder);
 
         ConfigureTimestamps(modelBuilder);
-        
         modelBuilder.Entity<User>().ToTable("Users");
 
         modelBuilder.Entity<User>(entity =>
@@ -48,8 +47,13 @@ public class PropertyDbContext : IdentityDbContext<User, IdentityRole<Guid>, Gui
             entity.Property(e => e.PasswordHash)
                 .HasColumnType("text")
                 .IsRequired();
-                
             entity.HasIndex(e => e.Email);
+        });
+
+        modelBuilder.Entity<Property>(entity =>
+        {
+            entity.HasIndex(e => e.OwnerId);
+            entity.HasIndex(e => new { e.OwnerId, e.Hash }).IsUnique();
         });
 
         modelBuilder.Entity<DocuSealPDFTemplate>(entity =>
@@ -58,7 +62,6 @@ public class PropertyDbContext : IdentityDbContext<User, IdentityRole<Guid>, Gui
                 .WithMany(u => u.Templates)
                 .HasForeignKey(d => d.OwnerId)
                 .OnDelete(DeleteBehavior.Cascade);
-                
             entity.HasIndex(e => e.TemplateId).IsUnique();
         });
 
@@ -97,12 +100,11 @@ public class PropertyDbContext : IdentityDbContext<User, IdentityRole<Guid>, Gui
             }
         }
     }
-    
+
     private void UpdateTimestamps()
     {
         var entries = ChangeTracker.Entries<ITimestampedEntity>()
             .Where(e => e.State == EntityState.Modified);
-        
         foreach (var entry in entries)
         {
             entry.Entity.UpdatedAt = DateTime.UtcNow;

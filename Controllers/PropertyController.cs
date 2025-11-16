@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using RentEZApi.Services;
 using RentEZApi.Exceptions;
+using RentEZApi.Models.DTOs.Property;
 
 namespace RentEZApi.Controllers;
 
@@ -11,6 +13,7 @@ public class PropertyController : ControllerBase
 {
     private readonly ConfigService _config;
     private readonly PropertyService _propertyService;
+    private readonly string unknownErrorMessage = "Unknown error occurred";
 
     public PropertyController(ConfigService config, PropertyService propertyService)
     {
@@ -54,7 +57,7 @@ public class PropertyController : ControllerBase
     }
 
     [HttpPost]
-    // [Authorize(AuthenticationSchemes = "Bearer", Policy = "UserOrAdmin")]
+    [Authorize(AuthenticationSchemes = "Bearer", Policy = "UserOrAdmin")]
     public async Task<IActionResult> CreateProperty(CreatePropertyDto dto)
     {
         if (!ModelState.IsValid)
@@ -71,7 +74,14 @@ public class PropertyController : ControllerBase
 
         try
         {
-            var property = await _propertyService.CreateAsync(dto);
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (userIdClaim == null) return Unauthorized(new
+            {
+                error = "User authorization check failed",
+                message = "Please login to an account to register your property listing"
+            });
+            var currentUserId = Guid.Parse(userIdClaim);
+            var property = await _propertyService.CreateAsync(dto, currentUserId);
             return CreatedAtAction(
                         nameof(GetProperty),
                         new { id = property.Id },
@@ -94,6 +104,28 @@ public class PropertyController : ControllerBase
                         error = ex.Message,
                         message = "Unknown Error Occurred",
                     });
+        }
+    }
+
+    [HttpPut("{id}")]
+    // [Authorize(AuthenticationSchemes = "Bearer", Policy = "UserOrAdmin")]
+    public async Task<IActionResult> EditProperty(Guid id, EditPropertyDto dto)
+    {
+        try
+        {
+            // var
+            return Ok();
+        }
+        catch (ObjectNotFoundException ex)
+        {
+            return NotFound(new { error = ex.Message, message = "User not found" });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(
+                StatusCodes.Status500InternalServerError,
+                new { error = ex.Message, message = unknownErrorMessage }
+            );
         }
     }
 }

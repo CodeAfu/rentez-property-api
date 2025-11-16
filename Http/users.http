@@ -1,0 +1,81 @@
+### 
+
+@auth = /api/auth
+@host = http://localhost:5115
+@user = /api/user
+
+
+### 
+
+GET {{host}}/health HTTP/1.1
+
+
+### 
+
+GET {{host}}{{user}} HTTP/1.1
+
+
+### 
+
+GET {{host}}{{user}}/aa76393b-b481-418d-8a1e-117377d8836d HTTP/1.1
+
+
+### 
+
+POST {{host}}{{user}}/ HTTP/1.1
+Content-Type: application/json
+
+{
+  "age": 30,
+  "emailAddress": "example2@gmail.com",
+  "ethnicity": "Asian",
+  "firstName": "FirstName",
+  "lastName": "LastName",
+  "occupation": "Student",
+  "password": "123123123",
+  "phoneNumber": "+60123456789"
+}
+
+
+### 
+
+DELETE {{host}}{{user}}/aa76393b-b481-418d-8a1e-117377d8836d HTTP/1.1
+
+
+### 
+
+PUT {{host}}{{user}}/c0fe3903-81b4-42cb-9f15-79b0159cf82f HTTP/1.1
+Content-Type: application/json
+
+{
+  "lastName": "Last"
+}
+
+
+### 
+
+POST {{host}}{{auth}}/login HTTP/1.1
+Content-Type: application/json
+
+{
+  "emailAddress": "en@gmail.com",
+  "password": "asdasdasd"
+}
+
+
+### 
+
+POST {{host}}{{auth}}/register HTTP/1.1
+Content-Type: application/json
+
+{
+  "age": 19,
+  "emailAddress": "en@gmail.com",
+  "ethnicity": "Indian",
+  "firstName": "New",
+  "lastName": "User",
+  "occupation": "Backend Developer",
+  "password": "asdasdasd",
+  "phoneNumber": "+60123456789"
+}
+

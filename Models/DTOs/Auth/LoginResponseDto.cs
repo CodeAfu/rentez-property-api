@@ -1,5 +1,3 @@
-using System.Globalization;
-
 namespace RentEZApi.Models.DTOs.Auth;
 
 public class LoginResponseDto
