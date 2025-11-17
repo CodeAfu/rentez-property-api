@@ -4,6 +4,7 @@ using RentEZApi.Models.Entities;
 using Microsoft.EntityFrameworkCore;
 using RentEZApi.Exceptions;
 using Microsoft.AspNetCore.Identity;
+using RentEZApi.Models.DTOs.Property;
 
 namespace RentEZApi.Services;
 
@@ -21,8 +22,34 @@ public class UsersService
     public async Task<List<User>> GetUsersAsync()
             => await _dbContext.Users.ToListAsync();
 
-    public async Task<User?> GetUserAsync(Guid id)
-            => await _dbContext.Users.FirstOrDefaultAsync(u => u.Id == id);
+    public async Task<SelectUserDto?> GetUserAsync(Guid id)
+            => await _dbContext.Users
+                .Where(u => u.Id == id)
+                .Select(u => new SelectUserDto
+                {
+                    FirstName = u.FirstName,
+                    LastName = u.LastName,
+                    Ethnicity = u.Ethnicity,
+                    Email = u.Email!,
+                    OwnedProperty = u.OwnedProperty.Select(p => new PropertySummaryDto
+                    {
+                        Title = p.Title,
+                        Description = p.Description,
+                        Address = p.Address,
+                        City = p.City,
+                        State = p.State,
+                        Rent = p.Rent,
+                    }).ToList()
+                })
+                .FirstOrDefaultAsync();
+
+    public async Task<ICollection<Property>> GetUserProperties(Guid id)
+    {
+        var user = await _dbContext.Users
+                .Include(u => u.OwnedProperty)
+                .FirstOrDefaultAsync(u => u.Id == id);
+        return user?.OwnedProperty ?? new List<Property>();
+    }
 
     public async Task<User> DeleteUserAsync(Guid id)
     {

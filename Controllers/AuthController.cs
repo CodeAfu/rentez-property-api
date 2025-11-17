@@ -1,3 +1,4 @@
+using System.IdentityModel.Tokens.Jwt;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -123,13 +124,14 @@ public class AuthController : ControllerBase
             // Read refresh token from cookie
             if (!Request.Cookies.TryGetValue("refreshToken", out var refreshToken))
                 return Unauthorized(
-                    new {
+                    new
+                    {
                         error = "Refresh token missing",
-                        message = "User not authorized" 
+                        message = "User not authorized"
                     });
-            
+
             var response = await _jwtService.RefreshAccessToken(refreshToken);
-            
+
             // Update cookie with new refresh token
             Response.Cookies.Append("refreshToken", response.RefreshToken, new CookieOptions
             {
@@ -138,7 +140,6 @@ public class AuthController : ControllerBase
                 SameSite = SameSiteMode.Strict,
                 Expires = DateTimeOffset.UtcNow.AddDays(30)
             });
-            
             return Ok(new
             {
                 response.Email,
@@ -172,7 +173,6 @@ public class AuthController : ControllerBase
                     await _dbContext.SaveChangesAsync();
                 }
             }
-            
             Response.Cookies.Delete("refreshToken");
             return Ok(new { message = "Logged out successfully" });
         }
@@ -181,7 +181,6 @@ public class AuthController : ControllerBase
             return StatusCode(500, new { message = "Internal server error" });
         }
     }
-    
     private UnauthorizedObjectResult UnauthorizedResponse(string error, string message)
     {
         return Unauthorized(new { error, message });

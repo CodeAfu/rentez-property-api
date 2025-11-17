@@ -33,7 +33,7 @@ public class JwtService
     public async Task<LoginResponseDto> Authenticate(LoginRequestDto request)
     {
         var user = await _userManager.FindByEmailAsync(request.Email);
-        if (user == null) 
+        if (user == null)
             throw new UserNotFoundException($"User with email '{request.Email}' not found");
         if (string.IsNullOrWhiteSpace(user.PasswordHash))
             throw new UnauthorizedException("Invalid credentials");
@@ -49,7 +49,7 @@ public class JwtService
             Email = request.Email,
             AccessToken = accessToken,
             RefreshToken = refreshToken,
-            ExpiresIn = (int) _config.GetJwtInfo().TokenExpiryTimestamp.Subtract(DateTime.UtcNow).TotalSeconds
+            ExpiresIn = (int)_config.GetJwtInfo().TokenExpiryTimestamp.Subtract(DateTime.UtcNow).TotalSeconds
         };
     }
 
@@ -60,10 +60,8 @@ public class JwtService
             new Claim(JwtRegisteredClaimNames.Name, requestEmail),
             new Claim(JwtRegisteredClaimNames.Sub, userId.ToString())
         };
-        
         foreach (var role in roles)
             claims.Add(new Claim(ClaimTypes.Role, role));
-        
         var jwtInfo = _config.GetJwtInfo();
 
         var tokenDescriptor = new SecurityTokenDescriptor
@@ -93,8 +91,7 @@ public class JwtService
             .ToListAsync();
 
         foreach (var old in oldTokens)
-                old.RevokedAt = DateTime.UtcNow;
-            
+            old.RevokedAt = DateTime.UtcNow;
         string token = RefreshTokenService.GenerateToken();
         string hash = RefreshTokenService.HashToken(token);
 
@@ -114,25 +111,23 @@ public class JwtService
     public async Task<LoginResponseDto> RefreshAccessToken(string providedRefreshToken)
     {
         var hash = RefreshTokenService.HashToken(providedRefreshToken);
-        
         var storedToken = await _dbContext.RefreshTokens
             .Include(rt => rt.User)
             .FirstOrDefaultAsync(rt => rt.TokenHash == hash);
-        
+
         if (storedToken?.IsValid != true)
             throw new UnauthorizedException("Invalid refresh token");
-        
+
         var roles = await _userManager.GetRolesAsync(storedToken.User);
         var accessToken = CreateAccessToken(storedToken.User.Email!, storedToken.UserId, roles);
-        
         var newRefreshToken = await CreateRefreshToken(storedToken.UserId);
-        
+
         return new LoginResponseDto
         {
             Email = storedToken.User.Email!,
             AccessToken = accessToken,
             RefreshToken = newRefreshToken,
-            ExpiresIn = (int) _config.GetJwtInfo().TokenExpiryTimestamp.Subtract(DateTime.UtcNow).TotalSeconds
+            ExpiresIn = (int)_config.GetJwtInfo().TokenExpiryTimestamp.Subtract(DateTime.UtcNow).TotalSeconds
         };
     }
 }

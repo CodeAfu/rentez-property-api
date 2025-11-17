@@ -26,7 +26,7 @@ public class UsersController : ControllerBase
     public async Task<IActionResult> GetUsers()
     {
         var users = await _userService.GetUsersAsync();
-        if (users == null) 
+        if (users == null)
             return NotFound(new { message = "Users not found" });
 
         return Ok(users);
@@ -37,10 +37,37 @@ public class UsersController : ControllerBase
     public async Task<IActionResult> GetUser(Guid id)
     {
         var user = await _userService.GetUserAsync(id);
-        if (user == null) 
+        if (user == null)
             return NotFound(new { message = "User not found" });
-        
         return Ok(user);
+    }
+
+    [HttpGet("u")]
+    [Authorize(AuthenticationSchemes = "Bearer", Policy = "UserOrAdmin")]
+    public async Task<IActionResult> GetCurrentUser()
+    {
+        var currentUserClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (currentUserClaim == null)
+        {
+            return Unauthorized(new { message = "Unauthorized" });
+        }
+
+        var currentUserId = Guid.Parse(currentUserClaim);
+        var user = await _userService.GetUserAsync(currentUserId);
+
+        if (user == null)
+            return NotFound(new { message = "User not found" });
+        return Ok(user);
+    }
+
+    [HttpGet("property/{id}")]
+    [Authorize(AuthenticationSchemes = "Bearer", Policy = "UserOrAdmin")]
+    public async Task<IActionResult> GetUserProperty(Guid id)
+    {
+        var property = await _userService.GetUserProperties(id);
+        if (property == null)
+            return NotFound(new { message = "User has no owned property listings" });
+        return Ok(property);
     }
 
     [HttpPost]
@@ -66,7 +93,7 @@ public class UsersController : ControllerBase
                 nameof(GetUser),
                 new { id = user.Id },
                 user
-            );        
+            );
         }
         catch (DuplicateEmailException ex)
         {
@@ -92,7 +119,7 @@ public class UsersController : ControllerBase
         }
         catch (UserNotFoundException ex)
         {
-            return NotFound(new { error = ex.Message, message = "User not found"});
+            return NotFound(new { error = ex.Message, message = "User not found" });
         }
         catch (Exception ex)
         {
@@ -100,7 +127,7 @@ public class UsersController : ControllerBase
                 StatusCodes.Status500InternalServerError,
                 new { error = ex.Message, message = unknownErrorMessage }
             );
-        } 
+        }
     }
 
     [HttpPut("{id}")]
@@ -111,25 +138,23 @@ public class UsersController : ControllerBase
         {
             var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var isAdmin = User.IsInRole("Admin");
-            
             if (!isAdmin && currentUserId != id.ToString())
             {
                 return Forbid();
             }
-            
             var edittedUser = await _userService.EditUserAsync(id, request);
             return Ok(edittedUser);
         }
         catch (UserNotFoundException ex)
         {
-            return NotFound(new { error = ex.Message, message = "User not found"});
+            return NotFound(new { error = ex.Message, message = "User not found" });
         }
         catch (Exception ex)
         {
             return StatusCode(
                 StatusCodes.Status500InternalServerError,
                 new { error = ex.Message, message = unknownErrorMessage }
-            ); 
+            );
         }
     }
 }
