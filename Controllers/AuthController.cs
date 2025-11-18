@@ -1,9 +1,9 @@
-using System.IdentityModel.Tokens.Jwt;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using RentEZApi.Data;
 using RentEZApi.Exceptions;
+using RentEZApi.Attributes;
 using RentEZApi.Models.DTOs.Auth;
 using RentEZApi.Models.DTOs.User;
 using RentEZApi.Services;
@@ -73,20 +73,21 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("register")]
+    [ValidateModelState]
     [AllowAnonymous]
     public async Task<IActionResult> Register([FromBody] RegisterUserDto request)
     {
-        if (!ModelState.IsValid)
-            return BadRequest(new
-            {
-                error = ModelState
-                    .Where(kvp => kvp.Value?.Errors.Count > 0)
-                    .ToDictionary(
-                        kvp => kvp.Key,
-                        kvp => kvp.Value?.Errors.Select(e => e.ErrorMessage).ToArray()
-                    ),
-                message = "Invalid Input"
-            });
+        // if (!ModelState.IsValid)
+        //     return BadRequest(new
+        //     {
+        //         error = ModelState
+        //             .Where(kvp => kvp.Value?.Errors.Count > 0)
+        //             .ToDictionary(
+        //                 kvp => kvp.Key,
+        //                 kvp => kvp.Value?.Errors.Select(e => e.ErrorMessage).ToArray()
+        //             ),
+        //         message = "Invalid Input"
+        //     });
 
         try
         {

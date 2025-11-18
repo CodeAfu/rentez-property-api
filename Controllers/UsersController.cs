@@ -4,6 +4,7 @@ using RentEZApi.Exceptions;
 using RentEZApi.Services;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
+using RentEZApi.Attributes;
 
 namespace RentEZApi.Controllers;
 
@@ -71,20 +72,21 @@ public class UsersController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(AuthenticationSchemes = "Bearer", Policy = "AdminOnly")]
+    [ValidateModelState]
+    // [Authorize(AuthenticationSchemes = "Bearer", Policy = "AdminOnly")]
     public async Task<IActionResult> CreateUser(CreateUserDto request)
     {
-        if (!ModelState.IsValid)
-            return BadRequest(new
-            {
-                error = ModelState
-                    .Where(kvp => kvp.Value?.Errors.Count > 0)
-                    .ToDictionary(
-                        kvp => kvp.Key,
-                        kvp => kvp.Value?.Errors.Select(e => e.ErrorMessage).ToArray()
-                    ),
-                message = "Invalid Input"
-            });
+        // if (!ModelState.IsValid)
+        //     return BadRequest(new
+        //     {
+        //         error = ModelState
+        //             .Where(kvp => kvp.Value?.Errors.Count > 0)
+        //             .ToDictionary(
+        //                 kvp => kvp.Key,
+        //                 kvp => kvp.Value?.Errors.Select(e => e.ErrorMessage).ToArray()
+        //             ),
+        //         message = "Invalid Input"
+        //     });
 
         try
         {

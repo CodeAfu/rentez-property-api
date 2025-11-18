@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using RentEZApi.Services;
 using RentEZApi.Exceptions;
 using RentEZApi.Models.DTOs.Property;
+using RentEZApi.Attributes;
 
 namespace RentEZApi.Controllers;
 
@@ -57,20 +58,21 @@ public class PropertyController : ControllerBase
     }
 
     [HttpPost]
+    [ValidateModelState]
     [Authorize(AuthenticationSchemes = "Bearer", Policy = "UserOrAdmin")]
     public async Task<IActionResult> CreateProperty(CreatePropertyDto dto)
     {
-        if (!ModelState.IsValid)
-            return BadRequest(new
-            {
-                error = ModelState
-                    .Where(kvp => kvp.Value?.Errors.Count > 0)
-                    .ToDictionary(
-                        kvp => kvp.Key,
-                        kvp => kvp.Value?.Errors.Select(e => e.ErrorMessage).ToArray()
-                    ),
-                message = "Invalid Input"
-            });
+        // if (!ModelState.IsValid)
+        //     return BadRequest(new
+        //     {
+        //         error = ModelState
+        //             .Where(kvp => kvp.Value?.Errors.Count > 0)
+        //             .ToDictionary(
+        //                 kvp => kvp.Key,
+        //                 kvp => kvp.Value?.Errors.Select(e => e.ErrorMessage).ToArray()
+        //             ),
+        //         message = "Invalid Input"
+        //     });
 
         try
         {
