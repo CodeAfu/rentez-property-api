@@ -73,21 +73,9 @@ public class UsersController : ControllerBase
 
     [HttpPost]
     [ValidateModelState]
-    // [Authorize(AuthenticationSchemes = "Bearer", Policy = "AdminOnly")]
+    [Authorize(AuthenticationSchemes = "Bearer", Policy = "AdminOnly")]
     public async Task<IActionResult> CreateUser(CreateUserDto request)
     {
-        // if (!ModelState.IsValid)
-        //     return BadRequest(new
-        //     {
-        //         error = ModelState
-        //             .Where(kvp => kvp.Value?.Errors.Count > 0)
-        //             .ToDictionary(
-        //                 kvp => kvp.Key,
-        //                 kvp => kvp.Value?.Errors.Select(e => e.ErrorMessage).ToArray()
-        //             ),
-        //         message = "Invalid Input"
-        //     });
-
         try
         {
             var user = await _userService.CreateUserAsync(request);

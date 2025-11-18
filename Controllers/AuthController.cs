@@ -17,13 +17,15 @@ public class AuthController : ControllerBase
     private readonly UsersService _usersService;
     private readonly JwtService _jwtService;
     private readonly PropertyDbContext _dbContext;
+    private readonly ConfigService _configService;
     private readonly string unknownErrorMessage = "Unknown error occurred";
 
-    public AuthController(UsersService userService, JwtService jwtService, PropertyDbContext dbContext)
+    public AuthController(UsersService userService, JwtService jwtService, PropertyDbContext dbContext, ConfigService configService)
     {
         _usersService = userService;
         _jwtService = jwtService;
         _dbContext = dbContext;
+        _configService = configService;
     }
 
     [HttpPost("login")]
@@ -35,6 +37,7 @@ public class AuthController : ControllerBase
         {
             var response = await _jwtService.Authenticate(request);
 
+            // TODO: Protect against CSRF attacks
             // Store refresh token in HTTPOnly cookie
             Response.Cookies.Append("refreshToken", response.RefreshToken, new CookieOptions
             {
@@ -77,18 +80,6 @@ public class AuthController : ControllerBase
     [AllowAnonymous]
     public async Task<IActionResult> Register([FromBody] RegisterUserDto request)
     {
-        // if (!ModelState.IsValid)
-        //     return BadRequest(new
-        //     {
-        //         error = ModelState
-        //             .Where(kvp => kvp.Value?.Errors.Count > 0)
-        //             .ToDictionary(
-        //                 kvp => kvp.Key,
-        //                 kvp => kvp.Value?.Errors.Select(e => e.ErrorMessage).ToArray()
-        //             ),
-        //         message = "Invalid Input"
-        //     });
-
         try
         {
             var createdUser = await _usersService.RegisterUserAsync(request);
@@ -133,6 +124,7 @@ public class AuthController : ControllerBase
 
             var response = await _jwtService.RefreshAccessToken(refreshToken);
 
+            // TODO: Protect against CSRF attacks
             // Update cookie with new refresh token
             Response.Cookies.Append("refreshToken", response.RefreshToken, new CookieOptions
             {
