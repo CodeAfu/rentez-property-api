@@ -7,6 +7,7 @@ using RentEZApi.Attributes;
 using RentEZApi.Models.DTOs.Auth;
 using RentEZApi.Models.DTOs.User;
 using RentEZApi.Services;
+using System.Security.Cryptography;
 
 namespace RentEZApi.Controllers;
 
@@ -30,20 +31,29 @@ public class AuthController : ControllerBase
 
     [HttpPost("login")]
     [AllowAnonymous]
-    // [ValidateAntiForgeryToken]
     public async Task<IActionResult> Login([FromBody] LoginRequestDto request)
     {
         try
         {
             var response = await _jwtService.Authenticate(request);
+            var csrfToken = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
 
-            // TODO: Protect against CSRF attacks
+
             // Store refresh token in HTTPOnly cookie
             Response.Cookies.Append("refreshToken", response.RefreshToken, new CookieOptions
             {
                 HttpOnly = true,
-                Secure = true, // HTTPS only
-                SameSite = SameSiteMode.Strict,
+                Secure = true,
+                SameSite = SameSiteMode.None,
+                Expires = DateTimeOffset.UtcNow.AddDays(30)
+            });
+
+            // CSRF Token
+            Response.Cookies.Append("X-CSRF-TOKEN", csrfToken, new CookieOptions
+            {
+                HttpOnly = false,
+                Secure = true,
+                SameSite = SameSiteMode.None,
                 Expires = DateTimeOffset.UtcNow.AddDays(30)
             });
 
@@ -51,7 +61,8 @@ public class AuthController : ControllerBase
             {
                 response.Email,
                 response.AccessToken,
-                response.ExpiresIn
+                response.ExpiresIn,
+                CsrfToken = csrfToken
             });
         }
         catch (UserNotFoundException ex)
@@ -123,21 +134,32 @@ public class AuthController : ControllerBase
                     });
 
             var response = await _jwtService.RefreshAccessToken(refreshToken);
+            var csrfToken = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
 
-            // TODO: Protect against CSRF attacks
             // Update cookie with new refresh token
             Response.Cookies.Append("refreshToken", response.RefreshToken, new CookieOptions
             {
                 HttpOnly = true,
                 Secure = true,
-                SameSite = SameSiteMode.Strict,
+                SameSite = SameSiteMode.None,
                 Expires = DateTimeOffset.UtcNow.AddDays(30)
             });
+
+            // CSRF Token
+            Response.Cookies.Append("X-CSRF-TOKEN", csrfToken, new CookieOptions
+            {
+                HttpOnly = false,
+                Secure = true,
+                SameSite = SameSiteMode.None,
+                Expires = DateTimeOffset.UtcNow.AddDays(30)
+            });
+
             return Ok(new
             {
                 response.Email,
                 response.AccessToken,
-                response.ExpiresIn
+                response.ExpiresIn,
+                CsrfToken = csrfToken,
             });
         }
         catch (UnauthorizedException ex)
