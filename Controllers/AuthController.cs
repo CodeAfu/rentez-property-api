@@ -19,14 +19,16 @@ public class AuthController : ControllerBase
     private readonly JwtService _jwtService;
     private readonly PropertyDbContext _dbContext;
     private readonly ConfigService _configService;
+    private readonly ILogger<AuthController> _logger;
     private readonly string unknownErrorMessage = "Unknown error occurred";
 
-    public AuthController(UsersService userService, JwtService jwtService, PropertyDbContext dbContext, ConfigService configService)
+    public AuthController(UsersService userService, JwtService jwtService, PropertyDbContext dbContext, ConfigService configService, ILogger<AuthController> logger)
     {
         _usersService = userService;
         _jwtService = jwtService;
         _dbContext = dbContext;
         _configService = configService;
+        _logger = logger;
     }
 
     [HttpPost("login")]
@@ -111,6 +113,7 @@ public class AuthController : ControllerBase
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex.Message);
             return StatusCode(
                 StatusCodes.Status500InternalServerError,
                 new { error = ex.Message, message = unknownErrorMessage }
@@ -166,9 +169,10 @@ public class AuthController : ControllerBase
         {
             return Unauthorized(new { message = ex.Message });
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            return StatusCode(500, new { message = "Internal server error" });
+            _logger.LogError(ex.Message);
+            return StatusCode(500, new { error = ex.Message, message = "Internal server error" });
         }
     }
 
@@ -191,8 +195,9 @@ public class AuthController : ControllerBase
             Response.Cookies.Delete("refreshToken");
             return Ok(new { message = "Logged out successfully" });
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            _logger.LogError(ex.Message);
             return StatusCode(500, new { message = "Internal server error" });
         }
     }
