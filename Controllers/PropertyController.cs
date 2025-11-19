@@ -23,7 +23,7 @@ public class PropertyController : ControllerBase
     }
 
     [HttpGet]
-    // [Authorize(AuthenticationSchemes = "Bearer", Policy = "UserOrAdmin")]
+    [Authorize(AuthenticationSchemes = "Bearer", Policy = "UserOrAdmin")]
     public async Task<IActionResult> GetProperties(int pageNum = 1, int lim = 5)
     {
         var result = await _propertyService.GetPaginatedAsync(pageNum, lim);
@@ -31,7 +31,7 @@ public class PropertyController : ControllerBase
     }
 
     [HttpGet("{id}", Name = "GetProperty")]
-    // [Authorize(AuthenticationSchemes = "Bearer", Policy = "UserOrAdmin")]
+    [Authorize(AuthenticationSchemes = "Bearer", Policy = "UserOrAdmin")]
     public async Task<IActionResult> GetProperty(Guid id)
     {
         try
@@ -62,18 +62,6 @@ public class PropertyController : ControllerBase
     [Authorize(AuthenticationSchemes = "Bearer", Policy = "UserOrAdmin")]
     public async Task<IActionResult> CreateProperty(CreatePropertyDto dto)
     {
-        // if (!ModelState.IsValid)
-        //     return BadRequest(new
-        //     {
-        //         error = ModelState
-        //             .Where(kvp => kvp.Value?.Errors.Count > 0)
-        //             .ToDictionary(
-        //                 kvp => kvp.Key,
-        //                 kvp => kvp.Value?.Errors.Select(e => e.ErrorMessage).ToArray()
-        //             ),
-        //         message = "Invalid Input"
-        //     });
-
         try
         {
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -110,7 +98,7 @@ public class PropertyController : ControllerBase
     }
 
     [HttpPut("{id}")]
-    // [Authorize(AuthenticationSchemes = "Bearer", Policy = "UserOrAdmin")]
+    [Authorize(AuthenticationSchemes = "Bearer", Policy = "UserOrAdmin")]
     public async Task<IActionResult> EditProperty(Guid id, EditPropertyDto dto)
     {
         try

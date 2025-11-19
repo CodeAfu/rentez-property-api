@@ -22,7 +22,13 @@ public class AuthController : ControllerBase
     private readonly ILogger<AuthController> _logger;
     private readonly string unknownErrorMessage = "Unknown error occurred";
 
-    public AuthController(UsersService userService, JwtService jwtService, PropertyDbContext dbContext, ConfigService configService, ILogger<AuthController> logger)
+    public AuthController(
+            UsersService userService,
+            JwtService jwtService,
+            PropertyDbContext dbContext,
+            ConfigService configService,
+            ILogger<AuthController> logger
+    )
     {
         _usersService = userService;
         _jwtService = jwtService;
@@ -39,7 +45,6 @@ public class AuthController : ControllerBase
         {
             var response = await _jwtService.Authenticate(request);
             var csrfToken = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
-
 
             // Store refresh token in HTTPOnly cookie
             Response.Cookies.Append("refreshToken", response.RefreshToken, new CookieOptions
