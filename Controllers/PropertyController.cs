@@ -24,9 +24,13 @@ public class PropertyController : ControllerBase
 
     [HttpGet]
     [Authorize(AuthenticationSchemes = "Bearer", Policy = "UserOrAdmin")]
-    public async Task<IActionResult> GetProperties(int pageNum = 1, int lim = 5)
+    public async Task<IActionResult> GetProperties(
+            int pageNum = 1,
+            int lim = 5,
+            string search = ""
+    )
     {
-        var result = await _propertyService.GetPaginatedAsync(pageNum, lim);
+        var result = await _propertyService.GetPaginatedAsync(pageNum, lim, search);
         return Ok(result);
     }
 
@@ -103,7 +107,7 @@ public class PropertyController : ControllerBase
     {
         try
         {
-            // var
+            var result = _propertyService.Edit(id, dto);
             return Ok();
         }
         catch (ObjectNotFoundException ex)

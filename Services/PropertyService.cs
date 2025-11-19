@@ -15,15 +15,28 @@ public class PropertyService
         _dbContext = dbContext;
     }
 
-    public async Task<List<Property>> GetPaginatedAsync(int pageNum, int lim)
+    public async Task<List<Property>> GetPaginatedAsync(int pageNum, int lim, string search)
     {
-        var propertyResult = await _dbContext.Property
+        var query = _dbContext.Property.AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            search = search.ToLower();
+            query = query.Where(p =>
+                p.Title.ToLower().Contains(search) ||
+                p.Description.ToLower().Contains(search) ||
+                p.Address.ToLower().Contains(search) ||
+                p.City.ToLower().Contains(search) ||
+                p.State.ToLower().Contains(search)
+            );
+        }
+
+        return await _dbContext.Property
             .OrderBy(p => p.Id)
             .Skip((pageNum - 1) * lim)
             .Take(lim)
             .ToListAsync();
 
-        return propertyResult;
     }
 
     public async Task<Property?> Get(Guid id)
@@ -81,6 +94,9 @@ public class PropertyService
 
         if (!string.IsNullOrWhiteSpace(request.City))
             property.City = request.City;
+
+        if (request.Rent != null)
+            property.Rent = request.Rent.Value;
 
         if (request.Images != null && request.Images.Length > 0)
             property.Images = request.Images;

@@ -1,5 +1,6 @@
 ### 
 
-@auth = /api/auth
-@host = http://localhost:5115
-@user = /api/user
+
+###
+
+GET http://localhost:5115/api/property? HTTP/1.1
