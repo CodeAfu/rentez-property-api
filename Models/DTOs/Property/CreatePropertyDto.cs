@@ -1,6 +1,5 @@
 
 using RentEZApi.Models.DTOs.Property;
-using RentEZApi.Models.Entities;
 
 public class CreatePropertyDto
 {
@@ -12,8 +11,8 @@ public class CreatePropertyDto
     public required decimal Rent { get; set; }
     public required string[] Images { get; set; } = Array.Empty<string>();
     public bool? DepositRequired { get; set; }
-    public BillsIncluded BillsIncluded { get; set; } = new();
-    public DocuSealPDFTemplate? LeaseAgreement { get; set; } = new();
+    public BillsIncluded? BillsIncluded { get; set; } = new();
+    public Guid? LeaseAgreementId { get; set; }
 
     // Preferences
     public string[] RoomType { get; set; } = Array.Empty<string>();
