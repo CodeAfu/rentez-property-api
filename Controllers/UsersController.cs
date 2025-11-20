@@ -29,7 +29,6 @@ public class UsersController : ControllerBase
         var users = await _userService.GetUsersAsync();
         if (users == null)
             return NotFound(new { message = "Users not found" });
-
         return Ok(users);
     }
 
@@ -58,6 +57,7 @@ public class UsersController : ControllerBase
 
         if (user == null)
             return NotFound(new { message = "User not found" });
+
         return Ok(user);
     }
 

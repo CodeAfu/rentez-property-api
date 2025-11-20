@@ -27,9 +27,12 @@ public class UsersService
                 .Where(u => u.Id == id)
                 .Select(u => new SelectUserDto
                 {
+                    Id = u.Id,
                     FirstName = u.FirstName,
                     LastName = u.LastName,
+                    DateOfBirth = u.DateOfBirth,
                     Ethnicity = u.Ethnicity,
+                    Occupation = u.Occupation,
                     Email = u.Email!,
                     OwnedProperty = u.OwnedProperty.Select(p => new PropertySummaryDto
                     {
@@ -73,12 +76,12 @@ public class UsersService
         {
             UserName = request.Email,
             Email = request.Email,
-            FirstName = request.FirstName,
-            LastName = request.LastName,
-            Age = request.Age,
+            FirstName = request.FirstName!,
+            LastName = request.LastName!,
+            DateOfBirth = request.DateOfBirth,
             PhoneNumber = request.PhoneNumber,
-            Occupation = request.Occupation,
-            Ethnicity = request.Ethnicity,
+            Occupation = request.Occupation!,
+            Ethnicity = request.Ethnicity!,
             PasswordHash = AuthorizationService.HashPassword(request.Password),
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow,
@@ -137,8 +140,8 @@ public class UsersService
         if (!string.IsNullOrWhiteSpace(request.LastName))
             user.LastName = request.LastName;
 
-        if (request.Age > 0)
-            user.Age = request.Age;
+        if (request.DateOfBirth != null)
+            user.DateOfBirth = request.DateOfBirth;
 
         if (!string.IsNullOrWhiteSpace(request.PhoneNumber))
             user.PhoneNumber = request.PhoneNumber;

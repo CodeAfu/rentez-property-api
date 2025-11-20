@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.AspNetCore.Identity;
+using RentEZApi.Attributes;
 
 namespace RentEZApi.Models.Entities;
 
@@ -13,8 +14,15 @@ public class User : IdentityUser<Guid>, IIdentifiable, ITimestampedEntity
     [MaxLength(50)]
     public string LastName { get; set; } = string.Empty;
 
-    [Range(18, 120)]
-    public int? Age { get; set; }
+    [Required]
+    [MinimumAge(18)]
+    public DateTime? DateOfBirth { get; set; }
+
+    // [NotMapped]
+    // public int? Age => DateOfBirth.HasValue
+    //     ? DateTime.UtcNow.Year - DateOfBirth.Value.Year -
+    //         (DateTime.UtcNow.DayOfYear < DateOfBirth.Value.DayOfYear ? 1 : 0)
+    //     : null;
 
     [MaxLength(100)]
     public string Occupation { get; set; } = string.Empty;

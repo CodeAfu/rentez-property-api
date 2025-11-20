@@ -116,7 +116,7 @@ public class PropertyService
             PreferredRaces = dto.PreferredRaces,
             PreferredOccupation = dto.PreferredOccupation,
             LeaseTermCategory = dto.LeaseTermCategory,
-            BillsIncluded = dto.BillsIncluded,
+            BillsIncluded = dto.BillsIncluded!,
         };
 
         var result = _dbContext.Property.Add(property);
