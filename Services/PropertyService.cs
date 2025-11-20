@@ -15,13 +15,15 @@ public class PropertyService
         _dbContext = dbContext;
     }
 
-    public async Task<List<Property>> GetPaginatedAsync(int pageNum, int lim, string search)
+    public async Task<List<PropertyListDto>> GetPaginatedAsync(PropertyFilterRequest filters)
     {
-        var query = _dbContext.Property.AsQueryable();
+        var query = _dbContext.Property
+            .Include(p => p.Owner)
+            .AsQueryable();
 
-        if (!string.IsNullOrWhiteSpace(search))
+        if (!string.IsNullOrWhiteSpace(filters.Search))
         {
-            search = search.ToLower();
+            var search = filters.Search.ToLower();
             query = query.Where(p =>
                 p.Title.ToLower().Contains(search) ||
                 p.Description.ToLower().Contains(search) ||
@@ -31,12 +33,58 @@ public class PropertyService
             );
         }
 
-        return await _dbContext.Property
-            .OrderBy(p => p.Id)
-            .Skip((pageNum - 1) * lim)
-            .Take(lim)
-            .ToListAsync();
+        if (filters.RoomTypes?.Length > 0)
+        {
+            query = query.Where(p => p.RoomType.Any(rt => filters.RoomTypes.Contains(rt)));
+        }
 
+        if (!string.IsNullOrWhiteSpace(filters.City))
+        {
+            query = query.Where(p => p.City.ToLower() == filters.City.ToLower());
+        }
+
+        if (!string.IsNullOrWhiteSpace(filters.State))
+        {
+            query = query.Where(p => p.State.ToLower() == filters.State.ToLower());
+        }
+
+        if (filters.MinRent.HasValue)
+        {
+            query = query.Where(p => p.Rent >= filters.MinRent.Value);
+        }
+
+        if (filters.MaxRent.HasValue)
+        {
+            query = query.Where(p => p.Rent <= filters.MaxRent.Value);
+        }
+
+        if (!string.IsNullOrWhiteSpace(filters.OwnerName))
+        {
+            var ownerName = filters.OwnerName.ToLower();
+            query = query.Where(p =>
+                (p.Owner.FirstName + " " + p.Owner.LastName).ToLower().Contains(ownerName)
+            );
+        }
+
+        return await query
+            .OrderBy(p => p.Id)
+            .Skip((filters.PageNum - 1) * filters.Lim)
+            .Take(filters.Lim)
+            .Select(p => new PropertyListDto
+            {
+                Id = p.Id,
+                Title = p.Title,
+                Description = p.Description,
+                Address = p.Address,
+                City = p.City,
+                State = p.State,
+                OwnerFirstName = p.Owner.FirstName,
+                OwnerLastName = p.Owner.LastName,
+                Rent = p.Rent,
+                Images = p.Images,
+                RoomType = p.RoomType
+            })
+            .ToListAsync();
     }
 
     public async Task<Property?> Get(Guid id)

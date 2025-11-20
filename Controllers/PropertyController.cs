@@ -15,23 +15,32 @@ public class PropertyController : ControllerBase
     private readonly ConfigService _config;
     private readonly PropertyService _propertyService;
     private readonly string unknownErrorMessage = "Unknown error occurred";
+    private readonly ILogger<PropertyController> _logger;
 
-    public PropertyController(ConfigService config, PropertyService propertyService)
+    public PropertyController(ConfigService config, PropertyService propertyService, ILogger<PropertyController> logger)
     {
         _config = config;
         _propertyService = propertyService;
+        _logger = logger;
     }
 
     [HttpGet]
     [Authorize(AuthenticationSchemes = "Bearer", Policy = "UserOrAdmin")]
-    public async Task<IActionResult> GetProperties(
-            int pageNum = 1,
-            int lim = 5,
-            string search = ""
-    )
+    public async Task<IActionResult> GetProperties([FromQuery] PropertyFilterRequest filters)
     {
-        var result = await _propertyService.GetPaginatedAsync(pageNum, lim, search);
-        return Ok(result);
+        try
+        {
+            var result = await _propertyService.GetPaginatedAsync(filters);
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex.Message);
+            return StatusCode(StatusCodes.Status500InternalServerError, new
+            {
+                message = "Something went wrong"
+            });
+        }
     }
 
     [HttpGet("{id}", Name = "GetProperty")]
