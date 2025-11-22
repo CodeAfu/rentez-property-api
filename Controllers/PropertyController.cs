@@ -25,8 +25,8 @@ public class PropertyController : ControllerBase
     }
 
     [HttpGet]
-    [Authorize(AuthenticationSchemes = "Bearer", Policy = "UserOrAdmin")]
-    public async Task<IActionResult> GetProperties([FromQuery] PropertyFilterRequest filters)
+    [AllowAnonymous]
+    public async Task<IActionResult> GetPropertyListings([FromQuery] PropertyFilterRequest filters)
     {
         try
         {

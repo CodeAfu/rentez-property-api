@@ -171,6 +171,8 @@ builder.Services.AddScoped<AuthorizationService>();
 builder.Services.AddScoped<RefreshTokenService>();
 builder.Services.AddScoped<DocuSealService>();
 
+builder.Services.AddLogging();
+
 builder.Services.AddEndpointsApiExplorer();
 
 var app = builder.Build();

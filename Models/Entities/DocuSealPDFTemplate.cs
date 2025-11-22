@@ -33,4 +33,6 @@ public class DocuSealPDFTemplate : IIdentifiable, ITimestampedEntity
 
     [Required]
     public DateTime UpdatedAt { get; set; }
+
+    // public string[] Submitters { get; set; } = [];
 }
