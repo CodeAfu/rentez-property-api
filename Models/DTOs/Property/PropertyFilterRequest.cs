@@ -4,7 +4,7 @@ namespace RentEZApi.Models.DTOs.Property;
 public class PropertyFilterRequest
 {
     public int PageNum { get; set; } = 1;
-    public int Lim { get; set; } = 5;
+    public int Lim { get; set; } = 6;
     public string? Search { get; set; }
     public string? OwnerName { get; set; }
     public string[]? RoomTypes { get; set; }
