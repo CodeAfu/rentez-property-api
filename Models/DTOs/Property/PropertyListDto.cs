@@ -1,4 +1,3 @@
-
 namespace RentEZApi.Models.DTOs.Property;
 
 public class PropertyListDto

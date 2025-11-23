@@ -3,19 +3,22 @@ using RentEZApi.Data;
 using RentEZApi.Models.Entities;
 using RentEZApi.Exceptions;
 using RentEZApi.Models.DTOs.Property;
+using RentEZApi.Models.DTOs.Result;
 
 namespace RentEZApi.Services;
 
 public class PropertyService
 {
     private readonly PropertyDbContext _dbContext;
+    private readonly ILogger<PropertyService> _logger;
 
-    public PropertyService(PropertyDbContext dbContext)
+    public PropertyService(PropertyDbContext dbContext, ILogger<PropertyService> logger)
     {
         _dbContext = dbContext;
+        _logger = logger;
     }
 
-    public async Task<List<PropertyListDto>> GetPaginatedAsync(PropertyFilterRequest filters)
+    public async Task<PaginatedResult<PropertyListDto>> GetPaginatedAsync(PropertyFilterRequest filters)
     {
         var query = _dbContext.Property
             .Include(p => p.Owner)
@@ -65,8 +68,9 @@ public class PropertyService
                 (p.Owner.FirstName + " " + p.Owner.LastName).ToLower().Contains(ownerName)
             );
         }
+        var totalCount = await query.CountAsync();
 
-        return await query
+        var items = await query
             .OrderBy(p => p.Id)
             .Skip((filters.PageNum - 1) * filters.Lim)
             .Take(filters.Lim)
@@ -85,6 +89,17 @@ public class PropertyService
                 RoomType = p.RoomType
             })
             .ToListAsync();
+
+        return new PaginatedResult<PropertyListDto>
+        {
+            Items = items,
+            Pagination = new Pagination
+            {
+                PageNum = filters.PageNum,
+                PageSize = filters.Lim,
+                TotalCount = totalCount,
+            }
+        };
     }
 
     public async Task<Property?> Get(Guid id)
