@@ -22,11 +22,10 @@ public class DocuSealService
         _config = config;
     }
 
-    public string GetBuilderToken(string? userEmail = null)
+    public string GetBuilderToken(string? userEmail = null, string? externalId = null)
     {
         var apiKey = _config.GetDocuSealAuthToken()!;
         var secret = Encoding.UTF8.GetBytes(apiKey);
-
         var payload = new Dictionary<string, object>
         {
             { "exp", DateTimeOffset.UtcNow.AddHours(1).ToUnixTimeSeconds() }
@@ -35,6 +34,11 @@ public class DocuSealService
         if (!string.IsNullOrEmpty(userEmail))
         {
             payload["user_email"] = userEmail;
+        }
+
+        if (!string.IsNullOrEmpty(externalId))
+        {
+            payload["external_Id"] = externalId;
         }
 
         var header = Base64UrlEncode(Encoding.UTF8.GetBytes("{\"alg\":\"HS256\",\"typ\":\"JWT\"}"));
@@ -77,9 +81,9 @@ public class DocuSealService
                     CreatedAt = payload.Data.CreatedAt,
                     UpdatedAt = payload.Data.UpdatedAt
                 };
+
                 _dbContext.DocuSealPDFTemplates.Add(template);
             }
-
             await _dbContext.SaveChangesAsync();
         }
     }

@@ -1,6 +1,5 @@
 using System.Security.Claims;
 using System.Text.Json;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using RentEZApi.Models.DTOs.DocuSeal;
@@ -30,23 +29,34 @@ public class DocuSealController : ControllerBase
     {
         // var userEmail = _config.GetTestEmail();
         var adminEmail = _config.GetProdEmail();
-        _logger.LogInformation("Using Production Email: ", adminEmail);
         var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
-        var tokenString = _docuSealService.GetBuilderToken(adminEmail);
+        _logger.LogInformation("Using Production Email: ", adminEmail);
+        _logger.LogInformation("Template External ID: ", currentUserId);
+
+        var tokenString = _docuSealService.GetBuilderToken(adminEmail, currentUserId);
         return Ok(new { token = tokenString });
     }
 
     [HttpPost("template-webhook")]
-    [AllowAnonymous]
+    [Authorize(AuthenticationSchemes = "Bearer", Policy = "UserOrAdmin")]
     public async Task<IActionResult> HandleTemplateWebhook([FromBody] DocuSealWebhookPayload payload)
     {
         var webhookSecret = _config.GetWebhookSecret();
         var signature = Request.Headers["X-Docuseal-Signature"].FirstOrDefault();
-
-        await _docuSealService.TemplateWebhook(payload);
-
-        return Ok();
+        try
+        {
+            await _docuSealService.TemplateWebhook(payload);
+            return Ok();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex.Message);
+            return StatusCode(500, new
+            {
+                message = "Something went wrong"
+            });
+        }
     }
 
     [HttpGet("templates")]

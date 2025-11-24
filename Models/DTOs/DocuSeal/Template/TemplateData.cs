@@ -2,7 +2,7 @@ using System.Text.Json.Serialization;
 
 namespace RentEZApi.Models.DTOs.DocuSeal.Template;
 
-public class TWHTemplateData
+public class TemplateData
 {
     [JsonPropertyName("id")]
     public long Id { get; set; }
@@ -17,9 +17,9 @@ public class TWHTemplateData
     [JsonPropertyName("updated_at")]
     public DateTime UpdatedAt { get; set; }
     [JsonPropertyName("schema")]
-    public List<TWHSchemaField> Schema { get; set; } = new List<TWHSchemaField>();
+    public List<SchemaField> Schema { get; set; } = new List<SchemaField>();
     [JsonPropertyName("submitters")]
-    public List<TWHSubmitter> Submitters { get; set; } = new List<TWHSubmitter>();
+    public List<Submitter> Submitters { get; set; } = new List<Submitter>();
     [JsonPropertyName("documents")]
-    public List<TWHDocument> Documents { get; set; } = new List<TWHDocument>();
+    public List<Document> Documents { get; set; } = new List<Document>();
 }

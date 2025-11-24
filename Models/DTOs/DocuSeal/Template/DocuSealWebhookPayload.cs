@@ -9,5 +9,5 @@ public class DocuSealWebhookPayload
     [JsonPropertyName("timestamp")]
     public required string Timestamp { get; set; }
     [JsonPropertyName("data")]
-    public required TWHTemplateData Data { get; set; }
+    public required TemplateData Data { get; set; }
 }
