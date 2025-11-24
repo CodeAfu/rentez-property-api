@@ -1,7 +1,10 @@
+using System.Security.Claims;
 using System.Text.Json;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using RentEZApi.Models.DTOs.DocuSeal;
+using RentEZApi.Models.DTOs.DocuSeal.Template;
 using RentEZApi.Services;
 
 namespace RentEZApi.Controllers;
@@ -21,17 +24,29 @@ public class DocuSealController : ControllerBase
         _logger = logger;
     }
 
-
     [HttpPost("builder-token")]
     [Authorize(AuthenticationSchemes = "Bearer", Policy = "UserOrAdmin")]
     public IActionResult GetBuilderToken()
     {
         // var userEmail = _config.GetTestEmail();
-        var userEmail = _config.GetProdEmail();
-        _logger.LogInformation("Using Production Email: ", userEmail);
+        var adminEmail = _config.GetProdEmail();
+        _logger.LogInformation("Using Production Email: ", adminEmail);
+        var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
-        var tokenString = _docuSealService.GetBuilderToken(userEmail);
+        var tokenString = _docuSealService.GetBuilderToken(adminEmail);
         return Ok(new { token = tokenString });
+    }
+
+    [HttpPost("template-webhook")]
+    [AllowAnonymous]
+    public async Task<IActionResult> HandleTemplateWebhook([FromBody] DocuSealWebhookPayload payload)
+    {
+        var webhookSecret = _config.GetWebhookSecret();
+        var signature = Request.Headers["X-Docuseal-Signature"].FirstOrDefault();
+
+        await _docuSealService.TemplateWebhook(payload);
+
+        return Ok();
     }
 
     [HttpGet("templates")]

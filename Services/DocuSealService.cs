@@ -2,8 +2,11 @@ using System.Net;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using Microsoft.EntityFrameworkCore;
 using RentEZApi.Data;
 using RentEZApi.Models.DTOs.DocuSeal;
+using RentEZApi.Models.DTOs.DocuSeal.Template;
+using RentEZApi.Models.Entities;
 using RestSharp;
 
 namespace RentEZApi.Services;
@@ -35,7 +38,7 @@ public class DocuSealService
         }
 
         var header = Base64UrlEncode(Encoding.UTF8.GetBytes("{\"alg\":\"HS256\",\"typ\":\"JWT\"}"));
-        var payloadJson = Base64UrlEncode(Encoding.UTF8.GetBytes(System.Text.Json.JsonSerializer.Serialize(payload)));
+        var payloadJson = Base64UrlEncode(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(payload)));
         var headerPayload = $"{header}.{payloadJson}";
 
         using (var hmac = new HMACSHA256(secret))
@@ -43,6 +46,41 @@ public class DocuSealService
             var signatureBytes = hmac.ComputeHash(Encoding.UTF8.GetBytes(headerPayload));
             var signature = Base64UrlEncode(signatureBytes);
             return $"{headerPayload}.{signature}";
+        }
+    }
+
+    public async Task TemplateWebhook(DocuSealWebhookPayload payload)
+    {
+        if (payload.EventType == "template.created" || payload.EventType == "template.updated")
+        {
+            var ownerId = payload.Data.ExternalId != null
+                ? Guid.Parse(payload.Data.ExternalId)
+                : throw new Exception("ExternalId required");
+
+            var existing = await _dbContext.DocuSealPDFTemplates
+                .FirstOrDefaultAsync(t => t.TemplateId == payload.Data.Id.ToString());
+
+            if (existing != null)
+            {
+                existing.Name = payload.Data.Name;
+                existing.DocumentJson = JsonSerializer.Serialize(payload.Data);
+                existing.UpdatedAt = DateTime.UtcNow;
+            }
+            else
+            {
+                var template = new DocuSealPDFTemplate
+                {
+                    TemplateId = payload.Data.Id.ToString(),
+                    Name = payload.Data.Name,
+                    DocumentJson = JsonSerializer.Serialize(payload.Data),
+                    OwnerId = ownerId,
+                    CreatedAt = payload.Data.CreatedAt,
+                    UpdatedAt = payload.Data.UpdatedAt
+                };
+                _dbContext.DocuSealPDFTemplates.Add(template);
+            }
+
+            await _dbContext.SaveChangesAsync();
         }
     }
 
