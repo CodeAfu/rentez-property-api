@@ -34,5 +34,7 @@ public class DocuSealPDFTemplate : IIdentifiable, ITimestampedEntity
     [Required]
     public DateTime UpdatedAt { get; set; }
 
-    // public string[] Submitters { get; set; } = [];
+    [Required]
+    [Column(TypeName = "jsonb")]
+    public string SubmittersJson { get; set; } = string.Empty;
 }

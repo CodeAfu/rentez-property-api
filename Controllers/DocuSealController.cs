@@ -1,7 +1,9 @@
+using System.Security.Claims;
 using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using RentEZApi.Models.DTOs.DocuSeal;
+using RentEZApi.Models.DTOs.DocuSeal.Template;
 using RentEZApi.Services;
 
 namespace RentEZApi.Controllers;
@@ -21,17 +23,51 @@ public class DocuSealController : ControllerBase
         _logger = logger;
     }
 
-
     [HttpPost("builder-token")]
     [Authorize(AuthenticationSchemes = "Bearer", Policy = "UserOrAdmin")]
     public IActionResult GetBuilderToken()
     {
-        // var userEmail = _config.GetTestEmail();
-        var userEmail = _config.GetProdEmail();
-        _logger.LogInformation("Using Production Email: ", userEmail);
+        // var adminEmail = _config.GetTestEmail();
+        var adminEmail = _config.GetProdEmail();
+        var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
-        var tokenString = _docuSealService.GetBuilderToken(userEmail);
-        return Ok(new { token = tokenString });
+        _logger.LogInformation("Using Production Email: ", adminEmail);
+        _logger.LogInformation("Template External ID: ", currentUserId);
+
+        try
+        {
+            var tokenString = _docuSealService.GetBuilderToken(adminEmail, currentUserId);
+            return Ok(new { token = tokenString });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex.Message);
+            return StatusCode(500, new
+            {
+                message = "Something went wrong"
+            });
+        }
+    }
+
+    [HttpPost("template-webhook")]
+    [Authorize(AuthenticationSchemes = "Bearer", Policy = "UserOrAdmin")]
+    public async Task<IActionResult> HandleTemplateWebhook([FromBody] DocuSealWebhookPayload payload)
+    {
+        var webhookSecret = _config.GetWebhookSecret();
+        var signature = Request.Headers["X-Docuseal-Signature"].FirstOrDefault();
+        try
+        {
+            await _docuSealService.TemplateWebhook(payload);
+            return Ok();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex.Message);
+            return StatusCode(500, new
+            {
+                message = "Something went wrong"
+            });
+        }
     }
 
     [HttpGet("templates")]

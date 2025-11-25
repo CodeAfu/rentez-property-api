@@ -15,11 +15,13 @@ public class UsersController : ControllerBase
     private readonly UsersService _userService;
     private readonly ConfigService _configService;
     private readonly string unknownErrorMessage = "Unknown error occurred";
+    private readonly ILogger<UsersController> _logger;
 
-    public UsersController(UsersService userService, ConfigService configService)
+    public UsersController(UsersService userService, ConfigService configService, ILogger<UsersController> logger)
     {
         _userService = userService;
         _configService = configService;
+        _logger = logger;
     }
 
     [HttpGet]

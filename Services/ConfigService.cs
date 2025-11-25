@@ -13,7 +13,8 @@ public class ConfigService
     public string? Get(string key) => _config[key];
     public string GetEnvironment() => _config["ASPNETCORE_ENVIRONMENT"] ?? "Production";
     public bool IsDevelopment() => _config["ASPNETCORE_ENVIRONMENT"] == "Development";
-    public string? GetDocuSealAuthToken() => _config["DocuSealAuthToken"];
+    public string? GetDocuSealAuthToken() => _config["DocuSeal:AuthToken"];
+    public string? GetWebhookSecret() => _config["DocuSeal:WebhookSecret"];
     public string? GetTestEmail() => _config["TestEmail"];
     public string? GetProdEmail() => _config["ProdEmail"];
     public JwtInfo GetJwtInfo()

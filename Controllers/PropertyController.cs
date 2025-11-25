@@ -70,6 +70,32 @@ public class PropertyController : ControllerBase
         }
     }
 
+    [HttpGet("u")]
+    [Authorize(AuthenticationSchemes = "Bearer", Policy = "UserOrAdmin")]
+    public async Task<IActionResult> GetCurrentUserProperty()
+    {
+        try
+        {
+            var currentUserClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrWhiteSpace(currentUserClaim))
+            {
+                return Unauthorized(new { message = "Unauthorized" });
+            }
+            var currentUserId = Guid.Parse(currentUserClaim);
+
+            var result = await _propertyService.GetUserOwnedProperty(currentUserId);
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex.Message);
+            return StatusCode(500, new
+            {
+                message = "Something went wrong"
+            });
+        }
+    }
+
     [HttpPost]
     [ValidateModelState]
     [Authorize(AuthenticationSchemes = "Bearer", Policy = "UserOrAdmin")]

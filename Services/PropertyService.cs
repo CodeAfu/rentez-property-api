@@ -105,6 +105,34 @@ public class PropertyService
     public async Task<Property?> Get(Guid id)
         => await _dbContext.Property.FirstOrDefaultAsync(p => p.Id == id);
 
+    public async Task<ICollection<PropertyDetails>> GetUserOwnedProperty(Guid userId)
+    {
+        _logger.LogInformation("User ID: ", userId.ToString());
+        return await _dbContext.Property
+            .AsNoTracking()
+            .Where(u => u.OwnerId == userId)
+            .Select(p => new PropertyDetails
+            {
+                Id = p.Id,
+                Title = p.Title,
+                Description = p.Description,
+                Address = p.Address,
+                City = p.City,
+                State = p.State,
+                Rent = p.Rent,
+                Images = p.Images,
+                DepositRequired = p.DepositRequired,
+                BillsIncluded = p.BillsIncluded,
+                RoomType = p.RoomType,
+                PreferredRaces = p.PreferredRaces,
+                PreferredOccupation = p.PreferredOccupation,
+                LeaseTermCategory = p.LeaseTermCategory,
+                OwnerId = p.OwnerId,
+                AgreementId = p.AgreementId
+            })
+            .ToListAsync();
+    }
+
     public async Task<Property> CreateAsync(CreatePropertyDto dto, Guid ownerId)
     {
         var hash = Hasher.Hash(new { dto, ownerId });
