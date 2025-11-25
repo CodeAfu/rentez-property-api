@@ -77,6 +77,7 @@ public class DocuSealService
                     TemplateId = payload.Data.Id.ToString(),
                     Name = payload.Data.Name,
                     DocumentJson = JsonSerializer.Serialize(payload.Data),
+                    SubmittersJson = JsonSerializer.Serialize(payload.Data.Submitters),
                     OwnerId = ownerId,
                     CreatedAt = payload.Data.CreatedAt,
                     UpdatedAt = payload.Data.UpdatedAt

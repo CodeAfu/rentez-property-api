@@ -27,15 +27,26 @@ public class DocuSealController : ControllerBase
     [Authorize(AuthenticationSchemes = "Bearer", Policy = "UserOrAdmin")]
     public IActionResult GetBuilderToken()
     {
-        // var userEmail = _config.GetTestEmail();
+        // var adminEmail = _config.GetTestEmail();
         var adminEmail = _config.GetProdEmail();
         var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
         _logger.LogInformation("Using Production Email: ", adminEmail);
         _logger.LogInformation("Template External ID: ", currentUserId);
 
-        var tokenString = _docuSealService.GetBuilderToken(adminEmail, currentUserId);
-        return Ok(new { token = tokenString });
+        try
+        {
+            var tokenString = _docuSealService.GetBuilderToken(adminEmail, currentUserId);
+            return Ok(new { token = tokenString });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex.Message);
+            return StatusCode(500, new
+            {
+                message = "Something went wrong"
+            });
+        }
     }
 
     [HttpPost("template-webhook")]
