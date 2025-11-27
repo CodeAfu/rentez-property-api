@@ -107,7 +107,6 @@ public class PropertyService
 
     public async Task<ICollection<PropertyDetails>> GetUserOwnedProperty(Guid userId)
     {
-        _logger.LogInformation("User ID: ", userId.ToString());
         return await _dbContext.Property
             .AsNoTracking()
             .Where(u => u.OwnerId == userId)

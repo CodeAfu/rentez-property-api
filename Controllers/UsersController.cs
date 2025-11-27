@@ -123,6 +123,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpPut("{id}")]
+    [ValidateModelState]
     [Authorize(AuthenticationSchemes = "Bearer", Policy = "UserOrAdmin")]
     public async Task<IActionResult> EditUser(Guid id, EditUserDto request)
     {
