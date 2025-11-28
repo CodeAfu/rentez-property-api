@@ -25,18 +25,26 @@ public class DocuSealController : ControllerBase
 
     [HttpPost("builder-token")]
     [Authorize(AuthenticationSchemes = "Bearer", Policy = "UserOrAdmin")]
-    public IActionResult GetBuilderToken()
+    public IActionResult GetBuilderToken([FromQuery] string propertyId)
     {
         // var adminEmail = _config.GetTestEmail();
         var adminEmail = _config.GetProdEmail();
-        var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(adminEmail))
+            return Conflict(new
+            {
+                message = "No email detected"
+            });
 
-        _logger.LogInformation("Using Production Email: ", adminEmail);
-        _logger.LogInformation("Template External ID: ", currentUserId);
+        var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(currentUserId))
+            return Unauthorized(new
+            {
+                message = "Please login to use this feature"
+            });
 
         try
         {
-            var tokenString = _docuSealService.GetBuilderToken(adminEmail, currentUserId);
+            var tokenString = _docuSealService.GetBuilderToken(adminEmail, currentUserId, propertyId);
             return Ok(new { token = tokenString });
         }
         catch (Exception ex)
@@ -49,12 +57,23 @@ public class DocuSealController : ControllerBase
         }
     }
 
-    [HttpPost("template-webhook")]
+    [HttpPost("{templateId}/builder-token")]
     [Authorize(AuthenticationSchemes = "Bearer", Policy = "UserOrAdmin")]
+    public async Task<IActionResult> GetBuilderTokenByTemplateId(string templateId)
+    {
+        var adminEmail = _config.GetProdEmail();
+        var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+        _logger.LogInformation("Using Production Email: ", adminEmail);
+        _logger.LogInformation("Template External ID: ", currentUserId);
+        return Ok();
+    }
+
+
+    [HttpPost("template-webhook")]
+    // [ValidateDocuSealSignature]
     public async Task<IActionResult> HandleTemplateWebhook([FromBody] DocuSealWebhookPayload payload)
     {
-        var webhookSecret = _config.GetWebhookSecret();
-        var signature = Request.Headers["X-Docuseal-Signature"].FirstOrDefault();
         try
         {
             await _docuSealService.TemplateWebhook(payload);
