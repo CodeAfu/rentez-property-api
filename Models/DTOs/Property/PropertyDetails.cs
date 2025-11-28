@@ -20,4 +20,5 @@ public class PropertyDetails
 
     public Guid OwnerId { get; set; }
     public Guid? AgreementId { get; set; }
+    public DateTime CreatedAt { get; set; }
 }

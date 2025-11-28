@@ -127,7 +127,8 @@ public class PropertyService
                 PreferredOccupation = p.PreferredOccupation,
                 LeaseTermCategory = p.LeaseTermCategory,
                 OwnerId = p.OwnerId,
-                AgreementId = p.AgreementId
+                AgreementId = p.AgreementId,
+                CreatedAt = p.CreatedAt,
             })
             .ToListAsync();
     }

@@ -15,14 +15,16 @@ public class DocuSealService
 {
     private readonly PropertyDbContext _dbContext;
     private readonly ConfigService _config;
+    private readonly ILogger<DocuSealService> _logger;
 
-    public DocuSealService(PropertyDbContext dbContext, ConfigService config)
+    public DocuSealService(PropertyDbContext dbContext, ConfigService config, ILogger<DocuSealService> logger)
     {
         _dbContext = dbContext;
         _config = config;
+        _logger = logger;
     }
 
-    public string GetBuilderToken(string? userEmail = null, string? externalId = null)
+    public async Task<string> GetBuilderToken(string userEmail, string externalId, string propertyId, string? templateId = null)
     {
         var apiKey = _config.GetDocuSealAuthToken()!;
         var secret = Encoding.UTF8.GetBytes(apiKey);
@@ -31,15 +33,31 @@ public class DocuSealService
             { "exp", DateTimeOffset.UtcNow.AddHours(1).ToUnixTimeSeconds() }
         };
 
-        if (!string.IsNullOrEmpty(userEmail))
+        if (string.IsNullOrWhiteSpace(userEmail))
         {
-            payload["user_email"] = userEmail;
+            throw new Exception("No email provided");
         }
 
-        if (!string.IsNullOrEmpty(externalId))
+        if (string.IsNullOrWhiteSpace(externalId))
         {
-            payload["external_Id"] = externalId;
+            throw new Exception("No external ID provided");
         }
+
+        _logger.LogInformation("Set user_email: {Email}", userEmail);
+        payload["user_email"] = userEmail;
+
+        _logger.LogInformation("Set external_id: {ExternalId}", externalId);
+        payload["external_id"] = $"{externalId}:{propertyId}";
+
+
+        // if (!string.IsNullOrEmpty(templateId))
+        // {
+        //     var property = await _dbContext.Property
+        //         .Include(p => p.Agreement)
+        //         .FirstOrDefaultAsync(p => p.Agreement != null && p.Agreement.TemplateId == templateId);
+        //
+        //     var agreement = property?.Agreement?.DocumentJson;
+        // }
 
         var header = Base64UrlEncode(Encoding.UTF8.GetBytes("{\"alg\":\"HS256\",\"typ\":\"JWT\"}"));
         var payloadJson = Base64UrlEncode(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(payload)));
@@ -55,24 +73,32 @@ public class DocuSealService
 
     public async Task TemplateWebhook(DocuSealWebhookPayload payload)
     {
+        _logger.LogInformation("Payload: {JsonPayload}", JsonSerializer.Serialize(payload));
         if (payload.EventType == "template.created" || payload.EventType == "template.updated")
         {
-            var ownerId = payload.Data.ExternalId != null
-                ? Guid.Parse(payload.Data.ExternalId)
-                : throw new Exception("ExternalId required");
+            if (string.IsNullOrEmpty(payload.Data.ExternalId))
+                throw new Exception("ExternalId required");
 
-            var existing = await _dbContext.DocuSealPDFTemplates
+            var parts = payload.Data.ExternalId.Split(':');
+
+            if (parts.Length != 2)
+                throw new Exception($"Invalid ExternalId format: {payload.Data.ExternalId}");
+
+            var ownerId = Guid.Parse(parts[0]);
+            var propertyId = Guid.Parse(parts[1]);
+
+            var template = await _dbContext.DocuSealPDFTemplates
                 .FirstOrDefaultAsync(t => t.TemplateId == payload.Data.Id.ToString());
 
-            if (existing != null)
+            if (template != null)
             {
-                existing.Name = payload.Data.Name;
-                existing.DocumentJson = JsonSerializer.Serialize(payload.Data);
-                existing.UpdatedAt = DateTime.UtcNow;
+                template.Name = payload.Data.Name;
+                template.DocumentJson = JsonSerializer.Serialize(payload.Data);
+                template.UpdatedAt = DateTime.UtcNow;
             }
             else
             {
-                var template = new DocuSealPDFTemplate
+                template = new DocuSealPDFTemplate
                 {
                     TemplateId = payload.Data.Id.ToString(),
                     Name = payload.Data.Name,
@@ -84,6 +110,25 @@ public class DocuSealService
                 };
 
                 _dbContext.DocuSealPDFTemplates.Add(template);
+            }
+            var property = await _dbContext.Property
+                .FirstOrDefaultAsync(p => p.Id == propertyId);
+
+            if (property != null)
+            {
+                // Security check: Ensure the property actually belongs to the user mentioned in the token
+                if (property.OwnerId != ownerId)
+                {
+                    _logger.LogWarning($"Security Warning: User {ownerId} tried to attach template to Property {propertyId} owned by {property.OwnerId}");
+                    throw new UnauthorizedAccessException("Property owner mismatch");
+                }
+
+                // EF Core will automatically update AgreementId when we set this navigation property
+                property.Agreement = template;
+            }
+            else
+            {
+                _logger.LogWarning($"Property {propertyId} not found for template linking.");
             }
             await _dbContext.SaveChangesAsync();
         }
