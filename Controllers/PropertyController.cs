@@ -44,7 +44,8 @@ public class PropertyController : ControllerBase
     }
 
     [HttpGet("{id}", Name = "GetProperty")]
-    [Authorize(AuthenticationSchemes = "Bearer", Policy = "UserOrAdmin")]
+    // [Authorize(AuthenticationSchemes = "Bearer", Policy = "UserOrAdmin")]
+    [AllowAnonymous]
     public async Task<IActionResult> GetProperty(Guid id)
     {
         try
@@ -54,7 +55,6 @@ public class PropertyController : ControllerBase
             {
                 return NotFound(new
                 {
-                    error = "Property does not exist",
                     message = "Property does not exist"
                 });
             }
