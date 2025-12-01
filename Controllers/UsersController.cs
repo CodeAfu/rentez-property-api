@@ -68,7 +68,7 @@ public class UsersController : ControllerBase
 
     [HttpGet("u/applicant-profile")]
     [Authorize(AuthenticationSchemes = "Bearer", Policy = "UserOrAdmin")]
-    public async Task<IActionResult> EditCurrentUserApplicantProfile()
+    public async Task<IActionResult> GetCurrentUserApplicantProfile()
     {
         var currentUserClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         if (currentUserClaim == null)
