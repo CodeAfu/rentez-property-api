@@ -25,14 +25,14 @@ public class PropertyApplicationsService
 
         // Check for duplicate application
         var existingApplication = await _dbContext.PropertyApplications
-            .AnyAsync(pa => pa.ApplicantId == profile.Id && pa.PropertyId == request.PropertyId);
+            .AnyAsync(pa => pa.ApplicantProfileId == profile.Id && pa.PropertyId == request.PropertyId);
 
         if (existingApplication)
             throw new InvalidOperationException("Application already exists for this property");
 
         var application = new PropertyApplication
         {
-            ApplicantId = profile.Id,
+            ApplicantProfileId = profile.Id,
             PropertyId = request.PropertyId
         };
 
@@ -134,7 +134,7 @@ public class PropertyApplicationsService
             PropertyId = application.PropertyId,
             PropertyTitle = application.Property.Title,
             PropertyAddress = application.Property.Address,
-            ApplicantId = application.ApplicantId,
+            ApplicantProfileId = application.ApplicantProfileId,
             ApplicantName = $"{application.ApplicantProfile.User.FirstName} {application.ApplicantProfile.User.LastName}",
             ApplicantEmail = application.ApplicantProfile.User.Email!,
             CreatedAt = application.CreatedAt

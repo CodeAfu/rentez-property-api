@@ -11,7 +11,7 @@ public class PropertyApplication : IIdentifiable, ITimestampedEntity
 
     [Required]
     [ForeignKey(nameof(ApplicantProfile))]
-    public Guid ApplicantId { get; set; }
+    public Guid ApplicantProfileId { get; set; }
     public ApplicantProfile ApplicantProfile { get; set; } = null!;
 
     [Required]

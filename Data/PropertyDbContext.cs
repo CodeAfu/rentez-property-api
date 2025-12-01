@@ -86,7 +86,7 @@ public class PropertyDbContext : IdentityDbContext<User, IdentityRole<Guid>, Gui
         modelBuilder.Entity<PropertyApplication>(entity =>
         {
             entity.HasIndex(e => e.PropertyId);
-            entity.HasIndex(e => e.ApplicantId);
+            entity.HasIndex(e => e.ApplicantProfileId);
         });
     }
 
