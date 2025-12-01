@@ -49,7 +49,7 @@ public class PropertyDbContext : IdentityDbContext<User, IdentityRole<Guid>, Gui
             entity.Property(e => e.PasswordHash)
                 .HasColumnType("text")
                 .IsRequired();
-            entity.HasIndex(e => e.Email);
+            entity.HasIndex(e => e.Email).IsUnique();
         });
 
         modelBuilder.Entity<Property>(entity =>
