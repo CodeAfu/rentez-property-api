@@ -37,7 +37,7 @@ public class UsersService
                     OwnedProperty = u.OwnedProperty.Select(p => new PropertySummaryDto
                     {
                         Title = p.Title,
-                        Description = p.Description,
+                        Description = p.Description!,
                         Address = p.Address,
                         City = p.City,
                         State = p.State,

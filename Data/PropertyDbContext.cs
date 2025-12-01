@@ -16,6 +16,8 @@ public class PropertyDbContext : IdentityDbContext<User, IdentityRole<Guid>, Gui
     public DbSet<DocuSealPDFTemplate> DocuSealPDFTemplates { get; set; } = null!;
     public DbSet<RefreshToken> RefreshTokens { get; set; } = null!;
     public DbSet<Property> Property { get; set; } = null!;
+    public DbSet<PropertyApplication> PropertyApplications { get; set; } = null!;
+    public DbSet<ApplicantProfile> ApplicantProfiles { get; set; } = null!;
 
     // protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     // {
@@ -70,6 +72,21 @@ public class PropertyDbContext : IdentityDbContext<User, IdentityRole<Guid>, Gui
             entity.HasIndex(e => e.TokenHash);
             entity.HasIndex(e => e.UserId);
             entity.HasIndex(e => e.ExpiresAt);
+        });
+        modelBuilder.Entity<ApplicantProfile>(entity =>
+        {
+            entity.HasOne(ap => ap.User)
+                .WithOne(u => u.ApplicantProfile)
+                .HasForeignKey<ApplicantProfile>(ap => ap.UserId);
+
+            entity.HasIndex(ap => ap.UserId);
+            entity.HasIndex(ap => ap.GovernmentIdNumber);
+        });
+
+        modelBuilder.Entity<PropertyApplication>(entity =>
+        {
+            entity.HasIndex(e => e.PropertyId);
+            entity.HasIndex(e => e.ApplicantId);
         });
     }
 

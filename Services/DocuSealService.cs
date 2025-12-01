@@ -43,21 +43,28 @@ public class DocuSealService
             throw new Exception("No external ID provided");
         }
 
+        if (string.IsNullOrEmpty(templateId))
+        {
+            throw new Exception("No external ID provided");
+        }
+
+        var property = await _dbContext.Property
+            .Include(p => p.Agreement)
+            .FirstOrDefaultAsync(p => p.Agreement != null && p.Agreement.TemplateId == templateId);
+
+        if (property == null)
+        {
+            throw new Exception($"No property found for templateId: {templateId}");
+        }
+
         _logger.LogInformation("Set user_email: {Email}", userEmail);
         payload["user_email"] = userEmail;
 
         _logger.LogInformation("Set external_id: {ExternalId}", externalId);
         payload["external_id"] = $"{externalId}:{propertyId}";
 
-
-        // if (!string.IsNullOrEmpty(templateId))
-        // {
-        //     var property = await _dbContext.Property
-        //         .Include(p => p.Agreement)
-        //         .FirstOrDefaultAsync(p => p.Agreement != null && p.Agreement.TemplateId == templateId);
-        //
-        //     var agreement = property?.Agreement?.DocumentJson;
-        // }
+        _logger.LogInformation("Set template_id: {TemplateId}", templateId);
+        payload["template_id"] = templateId;
 
         var header = Base64UrlEncode(Encoding.UTF8.GetBytes("{\"alg\":\"HS256\",\"typ\":\"JWT\"}"));
         var payloadJson = Base64UrlEncode(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(payload)));

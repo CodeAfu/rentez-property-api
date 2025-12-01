@@ -25,7 +25,7 @@ public class DocuSealController : ControllerBase
 
     [HttpPost("builder-token")]
     [Authorize(AuthenticationSchemes = "Bearer", Policy = "UserOrAdmin")]
-    public IActionResult GetBuilderToken([FromQuery] string propertyId)
+    public IActionResult GetBuilderToken([FromQuery] string propertyId, [FromQuery] string templateId)
     {
         // var adminEmail = _config.GetTestEmail();
         var adminEmail = _config.GetProdEmail();
@@ -57,17 +57,29 @@ public class DocuSealController : ControllerBase
         }
     }
 
-    [HttpPost("{templateId}/builder-token")]
-    [Authorize(AuthenticationSchemes = "Bearer", Policy = "UserOrAdmin")]
-    public async Task<IActionResult> GetBuilderTokenByTemplateId(string templateId)
-    {
-        var adminEmail = _config.GetProdEmail();
-        var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-
-        _logger.LogInformation("Using Production Email: ", adminEmail);
-        _logger.LogInformation("Template External ID: ", currentUserId);
-        return Ok();
-    }
+    // [HttpPost("{templateId}/builder-token")]
+    // [Authorize(AuthenticationSchemes = "Bearer", Policy = "UserOrAdmin")]
+    // public async Task<IActionResult> GetBuilderTokenByTemplateId(string templateId)
+    // {
+    //     var adminEmail = _config.GetProdEmail();
+    //     if (string.IsNullOrEmpty(adminEmail))
+    //         return Conflict(new
+    //         {
+    //             message = "No email detected"
+    //         });
+    //
+    //     var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+    //     if (string.IsNullOrEmpty(currentUserId))
+    //         return Unauthorized(new
+    //         {
+    //             message = "Please login to use this feature"
+    //         });
+    //
+    //     _logger.LogInformation("Using Production Email: ", adminEmail);
+    //     _logger.LogInformation("Template External ID: ", currentUserId);
+    //
+    //     return Ok();
+    // }
 
 
     [HttpPost("template-webhook")]

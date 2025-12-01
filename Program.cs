@@ -170,6 +170,8 @@ builder.Services.AddScoped<PropertyService>();
 builder.Services.AddScoped<AuthorizationService>();
 builder.Services.AddScoped<RefreshTokenService>();
 builder.Services.AddScoped<DocuSealService>();
+builder.Services.AddScoped<PropertyApplicationsService>();
+builder.Services.AddScoped<ApplicantProfilesService>();
 
 builder.Services.AddLogging();
 

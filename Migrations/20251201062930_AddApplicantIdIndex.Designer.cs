@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using RentEZApi.Data;
@@ -11,9 +12,11 @@ using RentEZApi.Data;
 namespace RentEZApi.Migrations
 {
     [DbContext(typeof(PropertyDbContext))]
-    partial class PropertyDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251201062930_AddApplicantIdIndex")]
+    partial class AddApplicantIdIndex
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -152,54 +155,6 @@ namespace RentEZApi.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
-            modelBuilder.Entity("RentEZApi.Models.Entities.ApplicantProfile", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasDefaultValueSql("NOW()");
-
-                    b.Property<string>("EmployerName")
-                        .HasColumnType("text");
-
-                    b.Property<string>("GovernmentIdNumber")
-                        .HasColumnType("text");
-
-                    b.Property<string>("GovernmentIdType")
-                        .HasColumnType("text");
-
-                    b.Property<bool?>("HasPets")
-                        .HasColumnType("boolean");
-
-                    b.Property<decimal?>("MonthlyIncome")
-                        .HasColumnType("numeric");
-
-                    b.Property<int?>("NumberOfOccupants")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("PetDetails")
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("GovernmentIdNumber");
-
-                    b.HasIndex("UserId")
-                        .IsUnique();
-
-                    b.ToTable("ApplicantProfiles");
-                });
-
             modelBuilder.Entity("RentEZApi.Models.Entities.DocuSealPDFTemplate", b =>
                 {
                     b.Property<Guid>("Id")
@@ -273,6 +228,7 @@ namespace RentEZApi.Migrations
                         .HasColumnType("boolean");
 
                     b.Property<string>("Description")
+                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("Hash")
@@ -284,27 +240,12 @@ namespace RentEZApi.Migrations
                         .IsRequired()
                         .HasColumnType("text[]");
 
-                    b.Property<int?>("Income")
-                        .HasColumnType("integer");
-
                     b.PrimitiveCollection<string[]>("LeaseTermCategory")
                         .IsRequired()
                         .HasColumnType("text[]");
 
-                    b.Property<int?>("MaxLeaseTerm")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("MaxOccupants")
-                        .HasColumnType("integer");
-
-                    b.Property<int?>("MinLeaseTerm")
-                        .HasColumnType("integer");
-
                     b.Property<Guid>("OwnerId")
                         .HasColumnType("uuid");
-
-                    b.Property<bool>("PetsAllowed")
-                        .HasColumnType("boolean");
 
                     b.PrimitiveCollection<string[]>("PreferredOccupation")
                         .IsRequired()
@@ -320,9 +261,6 @@ namespace RentEZApi.Migrations
                     b.PrimitiveCollection<string[]>("RoomType")
                         .IsRequired()
                         .HasColumnType("text[]");
-
-                    b.Property<bool>("SmokingAllowed")
-                        .HasColumnType("boolean");
 
                     b.Property<string>("State")
                         .IsRequired()
@@ -568,17 +506,6 @@ namespace RentEZApi.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("RentEZApi.Models.Entities.ApplicantProfile", b =>
-                {
-                    b.HasOne("RentEZApi.Models.Entities.User", "User")
-                        .WithOne("ApplicantProfile")
-                        .HasForeignKey("RentEZApi.Models.Entities.ApplicantProfile", "UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
-                });
-
             modelBuilder.Entity("RentEZApi.Models.Entities.DocuSealPDFTemplate", b =>
                 {
                     b.HasOne("RentEZApi.Models.Entities.User", "Owner")
@@ -637,7 +564,7 @@ namespace RentEZApi.Migrations
 
             modelBuilder.Entity("RentEZApi.Models.Entities.PropertyApplication", b =>
                 {
-                    b.HasOne("RentEZApi.Models.Entities.ApplicantProfile", "ApplicantProfile")
+                    b.HasOne("RentEZApi.Models.Entities.User", "Applicant")
                         .WithMany()
                         .HasForeignKey("ApplicantId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -649,7 +576,7 @@ namespace RentEZApi.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("ApplicantProfile");
+                    b.Navigation("Applicant");
 
                     b.Navigation("Property");
                 });
@@ -672,8 +599,6 @@ namespace RentEZApi.Migrations
 
             modelBuilder.Entity("RentEZApi.Models.Entities.User", b =>
                 {
-                    b.Navigation("ApplicantProfile");
-
                     b.Navigation("OwnedProperty");
 
                     b.Navigation("Templates");

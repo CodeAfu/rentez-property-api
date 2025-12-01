@@ -32,6 +32,7 @@ public class User : IdentityUser<Guid>, IIdentifiable, ITimestampedEntity
 
     // Foreign Keys
     public ICollection<Property> OwnedProperty { get; set; } = new List<Property>();
+    public ApplicantProfile? ApplicantProfile { get; set; }
 
     [Required]
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
