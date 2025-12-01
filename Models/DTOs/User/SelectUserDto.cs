@@ -11,5 +11,6 @@ public class SelectUserDto
     public string? Ethnicity { get; set; }
     public string? Occupation { get; set; }
     public string? Email { get; set; }
+    public UserApplicantProfileSummary? ApplicantProfile { get; set; }
     public required ICollection<PropertySummaryDto> OwnedProperty { get; set; }
 }

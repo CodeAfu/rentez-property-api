@@ -25,6 +25,7 @@ public class UsersService
     public async Task<SelectUserDto?> GetUserAsync(Guid id)
             => await _dbContext.Users
                 .Where(u => u.Id == id)
+                .Include(u => u.ApplicantProfile)
                 .Select(u => new SelectUserDto
                 {
                     Id = u.Id,
@@ -34,6 +35,16 @@ public class UsersService
                     Ethnicity = u.Ethnicity,
                     Occupation = u.Occupation,
                     Email = u.Email!,
+                    ApplicantProfile = u.ApplicantProfile == null ? null : new UserApplicantProfileSummary
+                    {
+                        MonthlyIncome = u.ApplicantProfile.MonthlyIncome,
+                        EmployerName = u.ApplicantProfile.EmployerName,
+                        GovernmentIdType = u.ApplicantProfile.GovernmentIdType,
+                        GovernmentIdNumber = u.ApplicantProfile.GovernmentIdNumber,
+                        NumberOfOccupants = u.ApplicantProfile.NumberOfOccupants,
+                        HasPets = u.ApplicantProfile.HasPets,
+                        PetDetails = u.ApplicantProfile.PetDetails,
+                    },
                     OwnedProperty = u.OwnedProperty.Select(p => new PropertySummaryDto
                     {
                         Title = p.Title,

@@ -5,6 +5,7 @@ using RentEZApi.Services;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
 using RentEZApi.Attributes;
+using RentEZApi.Models.DTOs.ApplicantProfile;
 
 namespace RentEZApi.Controllers;
 
@@ -14,14 +15,16 @@ public class UsersController : ControllerBase
 {
     private readonly UsersService _userService;
     private readonly ConfigService _configService;
+    private readonly ApplicantProfilesService _applicantProfilesService;
     private readonly string unknownErrorMessage = "Unknown error occurred";
     private readonly ILogger<UsersController> _logger;
 
-    public UsersController(UsersService userService, ConfigService configService, ILogger<UsersController> logger)
+    public UsersController(UsersService userService, ConfigService configService, ILogger<UsersController> logger, ApplicantProfilesService applicantProfileService)
     {
         _userService = userService;
         _configService = configService;
         _logger = logger;
+        _applicantProfilesService = applicantProfileService;
     }
 
     [HttpGet]
@@ -61,6 +64,53 @@ public class UsersController : ControllerBase
             return NotFound(new { message = "User not found" });
 
         return Ok(user);
+    }
+
+    [HttpGet("u/applicant-profile")]
+    [Authorize(AuthenticationSchemes = "Bearer", Policy = "UserOrAdmin")]
+    public async Task<IActionResult> EditCurrentUserApplicantProfile()
+    {
+        var currentUserClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (currentUserClaim == null)
+        {
+            return Unauthorized(new { message = "Unauthorized" });
+        }
+        var currentUserId = Guid.Parse(currentUserClaim);
+
+        var profile = await _applicantProfilesService.GetByUserIdAsync(currentUserId);
+
+        if (profile == null)
+            return NotFound(new { message = "Applicant profile not found" });
+
+        return Ok(profile);
+    }
+
+    [HttpPut("u/applicant-profile/edit")]
+    [Authorize(AuthenticationSchemes = "Bearer", Policy = "UserOrAdmin")]
+    public async Task<IActionResult> UpdateCurrentUserApplicantProfile([FromBody] UpdateApplicantProfileRequest request)
+    {
+        var currentUserClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (currentUserClaim == null)
+        {
+            return Unauthorized(new { message = "Unauthorized" });
+        }
+        var currentUserId = Guid.Parse(currentUserClaim);
+
+        try
+        {
+            var profile = await _applicantProfilesService.GetByUserIdAsync(currentUserId);
+
+            if (profile == null)
+                return NotFound(new { message = "Applicant profile not found" });
+
+            var updated = await _applicantProfilesService.UpdateAsync(profile.Id, currentUserId, request);
+            return Ok(updated);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error updating applicant profile");
+            return StatusCode(500, new { message = "Something went wrong" });
+        }
     }
 
     [HttpGet("property/{id}")]
