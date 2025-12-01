@@ -16,7 +16,7 @@ public class Property : IIdentifiable, ITimestampedEntity, IUnique
     [MaxLength(50)]
     public string Title { get; set; } = string.Empty;
 
-    public string Description { get; set; } = string.Empty;
+    public string? Description { get; set; } = string.Empty;
 
     [MaxLength(100)]
     public string Address { get; set; } = string.Empty;
@@ -39,7 +39,14 @@ public class Property : IIdentifiable, ITimestampedEntity, IUnique
     public string[] RoomType { get; set; } = Array.Empty<string>();
     public string[] PreferredRaces { get; set; } = Array.Empty<string>();
     public string[] PreferredOccupation { get; set; } = Array.Empty<string>();
+    public int? Income { get; set; }
+    public bool PetsAllowed { get; set; }
+    public int MaxOccupants { get; set; }
+    public bool SmokingAllowed { get; set; }
+
     public string[] LeaseTermCategory { get; set; } = Array.Empty<string>();
+    public int? MinLeaseTerm { get; set; } // in months
+    public int? MaxLeaseTerm { get; set; } // in months, null = no max
 
     // Navigation
     [Required]
