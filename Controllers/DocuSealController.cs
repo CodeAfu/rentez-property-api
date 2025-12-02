@@ -47,7 +47,7 @@ public class DocuSealController : ControllerBase
 
         try
         {
-            var tokenString = _docuSealService.GetBuilderToken(adminEmail, currentUserId, propertyId);
+            var tokenString = _docuSealService.GetBuilderToken(adminEmail, currentUserId, propertyId, templateId);
             return Ok(new { token = tokenString });
         }
         catch (Exception ex)
