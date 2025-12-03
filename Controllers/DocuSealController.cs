@@ -30,10 +30,13 @@ public class DocuSealController : ControllerBase
         // var adminEmail = _config.GetTestEmail();
         var adminEmail = _config.GetProdEmail();
         if (string.IsNullOrEmpty(adminEmail))
+        {
+            _logger.LogError("Please setup a 'ProdEmail` environment variable with your registered DocuSeal email");
             return Conflict(new
             {
                 message = "No email detected"
             });
+        }
 
         var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         if (string.IsNullOrEmpty(currentUserId))
@@ -56,31 +59,6 @@ public class DocuSealController : ControllerBase
             });
         }
     }
-
-    // [HttpPost("{templateId}/builder-token")]
-    // [Authorize(AuthenticationSchemes = "Bearer", Policy = "UserOrAdmin")]
-    // public async Task<IActionResult> GetBuilderTokenByTemplateId(string templateId)
-    // {
-    //     var adminEmail = _config.GetProdEmail();
-    //     if (string.IsNullOrEmpty(adminEmail))
-    //         return Conflict(new
-    //         {
-    //             message = "No email detected"
-    //         });
-    //
-    //     var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-    //     if (string.IsNullOrEmpty(currentUserId))
-    //         return Unauthorized(new
-    //         {
-    //             message = "Please login to use this feature"
-    //         });
-    //
-    //     _logger.LogInformation("Using Production Email: ", adminEmail);
-    //     _logger.LogInformation("Template External ID: ", currentUserId);
-    //
-    //     return Ok();
-    // }
-
 
     [HttpPost("template-webhook")]
     // [ValidateDocuSealSignature]

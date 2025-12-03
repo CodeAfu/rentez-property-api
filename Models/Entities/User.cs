@@ -14,7 +14,6 @@ public class User : IdentityUser<Guid>, IIdentifiable, ITimestampedEntity
     [MaxLength(50)]
     public string LastName { get; set; } = string.Empty;
 
-    [Required]
     [MinimumAge(18)]
     public DateTime? DateOfBirth { get; set; }
 
