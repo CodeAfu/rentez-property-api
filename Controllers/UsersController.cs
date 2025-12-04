@@ -198,7 +198,7 @@ public class UsersController : ControllerBase
         }
     }
 
-    [HttpPost]
+    [HttpPost("create-rent-profile")]
     [Authorize(AuthenticationSchemes = "Bearer", Policy = "UserOrAdmin")]
     public async Task<IActionResult> CreateProfile([FromBody] CreateApplicantProfileRequest request)
     {

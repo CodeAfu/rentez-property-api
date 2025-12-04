@@ -232,18 +232,14 @@ public class UsersService
             .AnyAsync(p => p.Id == propertyId);
 
         if (!propertyExists)
-        {
             throw new ObjectNotFoundException($"Property {propertyId} not found");
-        }
 
         // Check for duplicate application
         var existingApplication = await _dbContext.PropertyApplications
             .AnyAsync(pa => pa.UserId == userId && pa.PropertyId == propertyId);
 
         if (existingApplication)
-        {
             throw new InvalidOperationException("You have already applied to this property");
-        }
 
         var application = new PropertyApplication
         {
