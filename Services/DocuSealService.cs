@@ -46,21 +46,22 @@ public class DocuSealService
             throw new Exception("No external ID provided");
         }
 
-        if (string.IsNullOrEmpty(templateId))
+        if (!string.IsNullOrEmpty(templateId))
         {
-            throw new Exception("No external ID provided");
-        }
+            var dbTemplateId = await _dbContext.Property
+                .Where(p => p.Id == Guid.Parse(propertyId))
+                .Select(p => p.Agreement != null ? p.Agreement.TemplateId : null)
+                .FirstOrDefaultAsync();
 
-        var dbTemplateId = await _dbContext.Property
-            .Where(p => p.Id == Guid.Parse(propertyId))
-            .Select(p => p.Agreement != null ? p.Agreement.TemplateId : null)
-            .FirstOrDefaultAsync();
+            _logger.LogInformation("Fetched Template ID: {Property}", dbTemplateId);
 
-        _logger.LogInformation("Fetched Template ID: {Property}", dbTemplateId);
+            if (dbTemplateId == null)
+            {
+                throw new Exception($"Property {propertyId} does not have a valid Agreement/Template.");
+            }
 
-        if (dbTemplateId == null)
-        {
-            throw new Exception($"Property {propertyId} does not have a valid Agreement/Template.");
+            _logger.LogInformation("Set template_id: {TemplateId}", dbTemplateId);
+            payload["template_id"] = dbTemplateId;
         }
 
         _logger.LogInformation("Set user_email: {Email}", userEmail);
@@ -68,9 +69,6 @@ public class DocuSealService
 
         _logger.LogInformation("Set external_id: {ExternalId}", externalId);
         payload["external_id"] = $"{externalId}:{propertyId}";
-
-        _logger.LogInformation("Set template_id: {TemplateId}", dbTemplateId);
-        payload["template_id"] = dbTemplateId;
 
         var header = Base64UrlEncode(Encoding.UTF8.GetBytes("{\"alg\":\"HS256\",\"typ\":\"JWT\"}"));
         var payloadJson = Base64UrlEncode(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(payload)));
