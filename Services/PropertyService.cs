@@ -78,7 +78,7 @@ public class PropertyService
             {
                 Id = p.Id,
                 Title = p.Title,
-                Description = p.Description,
+                Description = p.Description!,
                 Address = p.Address,
                 City = p.City,
                 State = p.State,

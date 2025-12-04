@@ -79,6 +79,25 @@ public class DocuSealController : ControllerBase
         }
     }
 
+    [HttpPost("submission-webhook")]
+    // [ValidateDocuSealSignature]
+    public async Task<IActionResult> HandleSubmissionWebhook([FromBody] DocuSealWebhookPayload payload)
+    {
+        try
+        {
+            await _docuSealService.SubmissionWebhook(payload);
+            return Ok();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex.Message);
+            return StatusCode(500, new
+            {
+                message = "Something went wrong"
+            });
+        }
+    }
+
     [HttpGet("templates")]
     [Authorize(AuthenticationSchemes = "Bearer", Policy = "UserOrAdmin")]
     public async Task<ActionResult> GetAllTemplates()

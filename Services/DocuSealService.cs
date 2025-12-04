@@ -145,6 +145,20 @@ public class DocuSealService
         }
     }
 
+    public async Task SubmissionWebhook(DocuSealWebhookPayload payload)
+    {
+        _logger.LogInformation("Payload: {JsonPayload}", JsonSerializer.Serialize(payload));
+        if (
+            payload.EventType == "submission.created" ||
+            payload.EventType == "submission.completed" ||
+            payload.EventType == "submission.expired" ||
+            payload.EventType == "submission.archived"
+        )
+        {
+        }
+        return;
+    }
+
     public async Task<RestResponse> GetAllTemplates(CancellationToken ct = default)
     {
         var client = new RestClient("https://api.docuseal.com/templates");
