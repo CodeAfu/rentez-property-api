@@ -18,7 +18,6 @@ public class Property : IIdentifiable, ITimestampedEntity, IUnique
 
     public string? Description { get; set; } = string.Empty;
 
-    [MaxLength(100)]
     public string Address { get; set; } = string.Empty;
 
     [MaxLength(50)]

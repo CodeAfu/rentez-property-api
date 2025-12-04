@@ -29,7 +29,7 @@ public class PropertyService
             var search = filters.Search.ToLower();
             query = query.Where(p =>
                 p.Title.ToLower().Contains(search) ||
-                p.Description.ToLower().Contains(search) ||
+                p.Description!.ToLower().Contains(search) ||
                 p.Address.ToLower().Contains(search) ||
                 p.City.ToLower().Contains(search) ||
                 p.State.ToLower().Contains(search)
@@ -114,7 +114,7 @@ public class PropertyService
             {
                 Id = p.Id,
                 Title = p.Title,
-                Description = p.Description,
+                Description = p.Description ?? "",
                 Address = p.Address,
                 City = p.City,
                 State = p.State,
@@ -151,6 +151,7 @@ public class PropertyService
             Hash = hash,
             Description = dto.Description,
             Address = dto.Address,
+            Rent = dto.Rent,
             City = dto.City,
             State = dto.State,
             Images = dto.Images,
