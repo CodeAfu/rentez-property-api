@@ -10,9 +10,9 @@ public class PropertyApplication : IIdentifiable, ITimestampedEntity
     public Guid Id { get; set; }
 
     [Required]
-    [ForeignKey(nameof(ApplicantProfile))]
-    public Guid ApplicantProfileId { get; set; }
-    public ApplicantProfile ApplicantProfile { get; set; } = null!;
+    [ForeignKey(nameof(User))]
+    public Guid UserId { get; set; }
+    public User User { get; set; } = null!;
 
     [Required]
     [ForeignKey(nameof(Property))]

@@ -1,4 +1,4 @@
-namespace RentEZApi.Models.DTOs.ApplicantProfile;
+namespace RentEZApi.Models.DTOs.User;
 
 public class ApplicantProfileResponse
 {

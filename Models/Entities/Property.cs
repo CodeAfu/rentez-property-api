@@ -56,6 +56,10 @@ public class Property : IIdentifiable, ITimestampedEntity, IUnique
     public Guid? AgreementId { get; set; }
     public DocuSealPDFTemplate? Agreement { get; set; }
 
+    // [ForeignKey(nameof(Tenant))]
+    // public Guid TenantId { get; set; }
+    // public User Tenant { get; set; } = null!;
+
     // Timestamp
     [Required]
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]

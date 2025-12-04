@@ -12,11 +12,20 @@ public class UsersService
 {
     private readonly PropertyDbContext _dbContext;
     private readonly UserManager<User> _userManager;
+    private readonly PropertyApplicationsService _propertyApplicationsService;
+    private readonly ILogger<UsersService> _logger;
 
-    public UsersService(PropertyDbContext dbContext, UserManager<User> userManager)
+    public UsersService(
+            PropertyDbContext dbContext,
+            UserManager<User> userManager,
+            ILogger<UsersService> logger,
+            PropertyApplicationsService propertyApplicationsService
+    )
     {
         _dbContext = dbContext;
         _userManager = userManager;
+        _propertyApplicationsService = propertyApplicationsService;
+        _logger = logger;
     }
 
     public async Task<List<User>> GetUsersAsync()
@@ -25,7 +34,6 @@ public class UsersService
     public async Task<SelectUserDto?> GetUserAsync(Guid id)
             => await _dbContext.Users
                 .Where(u => u.Id == id)
-                .Include(u => u.ApplicantProfile)
                 .Select(u => new SelectUserDto
                 {
                     Id = u.Id,
@@ -35,16 +43,13 @@ public class UsersService
                     Ethnicity = u.Ethnicity,
                     Occupation = u.Occupation,
                     Email = u.Email!,
-                    ApplicantProfile = u.ApplicantProfile == null ? null : new UserApplicantProfileSummary
-                    {
-                        MonthlyIncome = u.ApplicantProfile.MonthlyIncome,
-                        EmployerName = u.ApplicantProfile.EmployerName,
-                        GovernmentIdType = u.ApplicantProfile.GovernmentIdType,
-                        GovernmentIdNumber = u.ApplicantProfile.GovernmentIdNumber,
-                        NumberOfOccupants = u.ApplicantProfile.NumberOfOccupants,
-                        HasPets = u.ApplicantProfile.HasPets,
-                        PetDetails = u.ApplicantProfile.PetDetails,
-                    },
+                    MonthlyIncome = u.MonthlyIncome,
+                    EmployerName = u.EmployerName,
+                    GovernmentIdType = u.GovernmentIdType,
+                    GovernmentIdNumber = u.GovernmentIdNumber,
+                    NumberOfOccupants = u.NumberOfOccupants,
+                    HasPets = u.HasPets,
+                    PetDetails = u.PetDetails,
                     OwnedProperty = u.OwnedProperty.Select(p => new PropertySummaryDto
                     {
                         Title = p.Title,
@@ -176,5 +181,82 @@ public class UsersService
         var validationSuccess = AuthorizationService.VerifyPassword(passwordHash, password);
         if (!validationSuccess)
             throw new InvalidPasswordException("Password does not match with database record");
+    }
+
+    public async Task<ApplicantProfileResponse> CreateProfileAsync(Guid userId, CreateApplicantProfileRequest request)
+    {
+        var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.Id == userId);
+
+        if (user == null)
+            throw new KeyNotFoundException("User does not exist");
+
+        user.MonthlyIncome = request.MonthlyIncome;
+        user.EmployerName = request.EmployerName;
+        user.GovernmentIdType = request.GovernmentIdType;
+        user.GovernmentIdNumber = request.GovernmentIdNumber;
+        user.NumberOfOccupants = request.NumberOfOccupants;
+        user.HasPets = request.HasPets;
+        user.PetDetails = request.PetDetails;
+
+        await _dbContext.SaveChangesAsync();
+
+        return new ApplicantProfileResponse()
+        {
+            MonthlyIncome = request.MonthlyIncome,
+            EmployerName = request.EmployerName,
+            GovernmentIdType = request.GovernmentIdType,
+            GovernmentIdNumber = request.GovernmentIdNumber,
+            NumberOfOccupants = request.NumberOfOccupants,
+            HasPets = request.HasPets,
+            PetDetails = request.PetDetails,
+        };
+    }
+
+    public async Task<PropertyApplication> SendRentPropertyRequest(Guid userId, Guid propertyId)
+    {
+        var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.Id == userId);
+        if (user == null)
+        {
+            _logger.LogError($"User not found for ID: {userId}");
+            throw new UserNotFoundException($"User not found for ID: {userId}");
+        }
+
+        if (string.IsNullOrWhiteSpace(user.GovernmentIdNumber) ||
+            string.IsNullOrWhiteSpace(user.GovernmentIdType))
+        {
+            _logger.LogError("Please provide your Government ID number and Government ID type to proceed");
+            throw new ProfileNotFoundException("Please provide your Government ID number and Government ID type to proceed");
+        }
+
+        var propertyExists = await _dbContext.Property
+            .AnyAsync(p => p.Id == propertyId);
+
+        if (!propertyExists)
+        {
+            throw new ObjectNotFoundException($"Property {propertyId} not found");
+        }
+
+        // Check for duplicate application
+        var existingApplication = await _dbContext.PropertyApplications
+            .AnyAsync(pa => pa.UserId == userId && pa.PropertyId == propertyId);
+
+        if (existingApplication)
+        {
+            throw new InvalidOperationException("You have already applied to this property");
+        }
+
+        var application = new PropertyApplication
+        {
+            Id = Guid.NewGuid(),
+            UserId = userId,
+            PropertyId = propertyId
+        };
+
+        _dbContext.PropertyApplications.Add(application);
+        await _dbContext.SaveChangesAsync();
+
+        _logger.LogInformation("User {UserId} applied to property {PropertyId}", userId, propertyId);
+
+        return application;
     }
 }

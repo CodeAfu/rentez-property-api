@@ -5,7 +5,6 @@ using RentEZApi.Services;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
 using RentEZApi.Attributes;
-using RentEZApi.Models.DTOs.ApplicantProfile;
 
 namespace RentEZApi.Controllers;
 
@@ -15,16 +14,14 @@ public class UsersController : ControllerBase
 {
     private readonly UsersService _userService;
     private readonly ConfigService _configService;
-    private readonly ApplicantProfilesService _applicantProfilesService;
     private readonly string unknownErrorMessage = "Unknown error occurred";
     private readonly ILogger<UsersController> _logger;
 
-    public UsersController(UsersService userService, ConfigService configService, ILogger<UsersController> logger, ApplicantProfilesService applicantProfileService)
+    public UsersController(UsersService userService, ConfigService configService, ILogger<UsersController> logger)
     {
         _userService = userService;
         _configService = configService;
         _logger = logger;
-        _applicantProfilesService = applicantProfileService;
     }
 
     [HttpGet]
@@ -66,52 +63,52 @@ public class UsersController : ControllerBase
         return Ok(user);
     }
 
-    [HttpGet("u/applicant-profile")]
-    [Authorize(AuthenticationSchemes = "Bearer", Policy = "UserOrAdmin")]
-    public async Task<IActionResult> GetCurrentUserApplicantProfile()
-    {
-        var currentUserClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (currentUserClaim == null)
-        {
-            return Unauthorized(new { message = "Unauthorized" });
-        }
-        var currentUserId = Guid.Parse(currentUserClaim);
+    // [HttpGet("u/applicant-profile")]
+    // [Authorize(AuthenticationSchemes = "Bearer", Policy = "UserOrAdmin")]
+    // public async Task<IActionResult> GetCurrentUserApplicantProfile()
+    // {
+    //     var currentUserClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+    //     if (currentUserClaim == null)
+    //     {
+    //         return Unauthorized(new { message = "Unauthorized" });
+    //     }
+    //     var currentUserId = Guid.Parse(currentUserClaim);
+    //
+    //     var profile = await _userService.GetByUserIdAsync(currentUserId);
+    //
+    //     if (profile == null)
+    //         return NotFound(new { message = "Applicant profile not found" });
+    //
+    //     return Ok(profile);
+    // }
 
-        var profile = await _applicantProfilesService.GetByUserIdAsync(currentUserId);
-
-        if (profile == null)
-            return NotFound(new { message = "Applicant profile not found" });
-
-        return Ok(profile);
-    }
-
-    [HttpPut("u/applicant-profile/edit")]
-    [Authorize(AuthenticationSchemes = "Bearer", Policy = "UserOrAdmin")]
-    public async Task<IActionResult> UpdateCurrentUserApplicantProfile([FromBody] UpdateApplicantProfileRequest request)
-    {
-        var currentUserClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (currentUserClaim == null)
-        {
-            return Unauthorized(new { message = "Unauthorized" });
-        }
-        var currentUserId = Guid.Parse(currentUserClaim);
-
-        try
-        {
-            var profile = await _applicantProfilesService.GetByUserIdAsync(currentUserId);
-
-            if (profile == null)
-                return NotFound(new { message = "Applicant profile not found" });
-
-            var updated = await _applicantProfilesService.UpdateAsync(profile.Id, currentUserId, request);
-            return Ok(updated);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error updating applicant profile");
-            return StatusCode(500, new { message = "Something went wrong" });
-        }
-    }
+    // [HttpPut("u/applicant-profile/edit")]
+    // [Authorize(AuthenticationSchemes = "Bearer", Policy = "UserOrAdmin")]
+    // public async Task<IActionResult> UpdateCurrentUserApplicantProfile([FromBody] UpdateApplicantProfileRequest request)
+    // {
+    //     var currentUserClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+    //     if (currentUserClaim == null)
+    //     {
+    //         return Unauthorized(new { message = "Unauthorized" });
+    //     }
+    //     var currentUserId = Guid.Parse(currentUserClaim);
+    //
+    //     try
+    //     {
+    //         var profile = await _applicantProfilesService.GetByUserIdAsync(currentUserId);
+    //
+    //         if (profile == null)
+    //             return NotFound(new { message = "Applicant profile not found" });
+    //
+    //         var updated = await _applicantProfilesService.UpdateAsync(profile.Id, currentUserId, request);
+    //         return Ok(updated);
+    //     }
+    //     catch (Exception ex)
+    //     {
+    //         _logger.LogError(ex, "Error updating applicant profile");
+    //         return StatusCode(500, new { message = "Something went wrong" });
+    //     }
+    // }
 
     [HttpGet("property/{id}")]
     [Authorize(AuthenticationSchemes = "Bearer", Policy = "UserOrAdmin")]
@@ -198,6 +195,61 @@ public class UsersController : ControllerBase
                 StatusCodes.Status500InternalServerError,
                 new { error = ex.Message, message = unknownErrorMessage }
             );
+        }
+    }
+
+    [HttpPost]
+    [Authorize(AuthenticationSchemes = "Bearer", Policy = "UserOrAdmin")]
+    public async Task<IActionResult> CreateProfile([FromBody] CreateApplicantProfileRequest request)
+    {
+        try
+        {
+            var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            var profile = await _userService.CreateProfileAsync(userId, request);
+            return CreatedAtAction(nameof(GetUser), new { id = userId }, profile);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error creating applicant profile");
+            return StatusCode(500, new { message = "Something went wrong" });
+        }
+    }
+
+    [HttpPost("apply-property")]
+    [Authorize(AuthenticationSchemes = "Bearer", Policy = "UserOrAdmin")]
+    public async Task<IActionResult> SendRentPropertyRequest([FromQuery] string propertyId)
+    {
+        var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        // if (userId == null) return Unauthorized("Please login to proceed");
+        _logger.LogInformation($"Web URL: {_configService.GetWebURL()}");
+        try
+        {
+            var application = await _userService.SendRentPropertyRequest(userId, Guid.Parse(propertyId));
+            return Ok(new { applicationId = application.Id, message = "Application submitted successfully" });
+        }
+        catch (ProfileNotFoundException)
+        {
+            _logger.LogInformation("Profile incomplete for user {UserId}", userId);
+            return Redirect($"{_configService.GetWebURL()}/property/{propertyId}/RentOutProperty");
+        }
+        catch (ObjectNotFoundException ex)
+        {
+            _logger.LogError(ex.Message);
+            return NotFound(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogError(ex.Message);
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex.Message, "Error creating applicant profile");
+            return StatusCode(500, new { message = "Something went wrong" });
         }
     }
 }

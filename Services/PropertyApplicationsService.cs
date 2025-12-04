@@ -2,37 +2,47 @@ using Microsoft.EntityFrameworkCore;
 using RentEZApi.Data;
 using RentEZApi.Models.DTOs.PropertyApplication;
 using RentEZApi.Models.Entities;
+using RentEZApi.Exceptions;
 
 namespace RentEZApi.Services;
 
 public class PropertyApplicationsService
 {
     private readonly PropertyDbContext _dbContext;
+    private readonly ILogger<PropertyApplicationsService> _logger;
 
-    public PropertyApplicationsService(PropertyDbContext context)
+    public PropertyApplicationsService(PropertyDbContext context, ILogger<PropertyApplicationsService> logger)
     {
         _dbContext = context;
+        _logger = logger;
     }
 
     public async Task<PropertyApplicationResponse> CreateAsync(Guid userId, CreateApplicationRequest request)
     {
         // Check if applicant profile exists
-        var profile = await _dbContext.ApplicantProfiles
-            .FirstOrDefaultAsync(ap => ap.UserId == userId);
+        var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.Id == userId);
+        if (user == null)
+        {
+            _logger.LogError($"User not found for ID: {userId}");
+            throw new UserNotFoundException($"User not found for ID: {userId}");
+        }
 
-        if (profile == null)
-            throw new InvalidOperationException("Applicant profile must be created before applying");
+        if (user.GovernmentIdNumber == null || user.GovernmentIdType == null)
+        {
+            _logger.LogError("Please provide your Government ID number and Government ID type to proceed");
+            throw new ProfileNotFoundException("Please provide your Government ID number and Government ID type to proceed");
+        }
 
         // Check for duplicate application
         var existingApplication = await _dbContext.PropertyApplications
-            .AnyAsync(pa => pa.ApplicantProfileId == profile.Id && pa.PropertyId == request.PropertyId);
+            .AnyAsync(pa => pa.UserId == user.Id && pa.PropertyId == request.PropertyId);
 
         if (existingApplication)
             throw new InvalidOperationException("Application already exists for this property");
 
         var application = new PropertyApplication
         {
-            ApplicantProfileId = profile.Id,
+            UserId = user.Id,
             PropertyId = request.PropertyId
         };
 
@@ -45,13 +55,13 @@ public class PropertyApplicationsService
     public async Task DeleteAsync(Guid applicationId, Guid userId)
     {
         var application = await _dbContext.PropertyApplications
-            .Include(pa => pa.ApplicantProfile)
+            .Include(u => u.User)
             .FirstOrDefaultAsync(pa => pa.Id == applicationId);
 
         if (application == null)
             throw new KeyNotFoundException("Application not found");
 
-        if (application.ApplicantProfile.UserId != userId)
+        if (application.UserId != userId)
             throw new UnauthorizedAccessException("Not authorized to delete this application");
 
         _dbContext.PropertyApplications.Remove(application);
@@ -61,8 +71,7 @@ public class PropertyApplicationsService
     public async Task<PropertyApplicationResponse> GetAsync(Guid applicationId, Guid userId)
     {
         var application = await _dbContext.PropertyApplications
-            .Include(pa => pa.ApplicantProfile)
-            .ThenInclude(ap => ap.User)
+            .Include(ap => ap.User)
             .Include(pa => pa.Property)
             .ThenInclude(p => p.Owner)
             .FirstOrDefaultAsync(pa => pa.Id == applicationId);
@@ -72,7 +81,7 @@ public class PropertyApplicationsService
 
         // Check authorization: owner of property or applicant
         var isOwner = application.Property.OwnerId == userId;
-        var isApplicant = application.ApplicantProfile.UserId == userId;
+        var isApplicant = application.UserId == userId;
 
         if (!isOwner && !isApplicant)
             throw new UnauthorizedAccessException("Not authorized to view this application");
@@ -83,10 +92,10 @@ public class PropertyApplicationsService
     public async Task<List<PropertyApplicationResponse>> GetApplicantApplicationsAsync(Guid userId)
     {
         var applications = await _dbContext.PropertyApplications
-            .Include(pa => pa.ApplicantProfile)
+            .Include(pa => pa.User)
             .Include(pa => pa.Property)
             .ThenInclude(p => p.Owner)
-            .Where(pa => pa.ApplicantProfile.UserId == userId)
+            .Where(pa => pa.UserId == userId)
             .OrderByDescending(pa => pa.CreatedAt)
             .ToListAsync();
 
@@ -105,8 +114,7 @@ public class PropertyApplicationsService
             throw new UnauthorizedAccessException("Not authorized to view applications for this property");
 
         var applications = await _dbContext.PropertyApplications
-            .Include(pa => pa.ApplicantProfile)
-            .ThenInclude(ap => ap.User)
+            .Include(ap => ap.User)
             .Include(pa => pa.Property)
             .Where(pa => pa.PropertyId == propertyId)
             .OrderByDescending(pa => pa.CreatedAt)
@@ -118,8 +126,7 @@ public class PropertyApplicationsService
     private async Task<PropertyApplicationResponse> GetApplicationResponse(Guid id)
     {
         var application = await _dbContext.PropertyApplications
-            .Include(pa => pa.ApplicantProfile)
-            .ThenInclude(ap => ap.User)
+            .Include(ap => ap.User)
             .Include(pa => pa.Property)
             .FirstAsync(pa => pa.Id == id);
 
@@ -134,9 +141,9 @@ public class PropertyApplicationsService
             PropertyId = application.PropertyId,
             PropertyTitle = application.Property.Title,
             PropertyAddress = application.Property.Address,
-            ApplicantProfileId = application.ApplicantProfileId,
-            ApplicantName = $"{application.ApplicantProfile.User.FirstName} {application.ApplicantProfile.User.LastName}",
-            ApplicantEmail = application.ApplicantProfile.User.Email!,
+            ApplicantUserId = application.UserId,
+            ApplicantName = $"{application.User.FirstName} {application.User.LastName}",
+            ApplicantEmail = application.User.Email!,
             CreatedAt = application.CreatedAt
         };
     }

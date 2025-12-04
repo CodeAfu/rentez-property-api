@@ -1,6 +1,6 @@
-namespace RentEZApi.Models.DTOs.ApplicantProfile;
+namespace RentEZApi.Models.DTOs.User;
 
-public class CreateApplicantProfileRequest
+public class UpdateApplicantProfileRequest
 {
     public decimal? MonthlyIncome { get; set; }
     public string? EmployerName { get; set; }

@@ -149,14 +149,12 @@ public class DocuSealService
     {
         _logger.LogInformation("Payload: {JsonPayload}", JsonSerializer.Serialize(payload));
         if (
-            payload.EventType == "submission.created" ||
-            payload.EventType == "submission.completed" ||
-            payload.EventType == "submission.expired" ||
-            payload.EventType == "submission.archived"
-        )
-        {
-        }
-        return;
+            payload.EventType != "submission.created" ||
+            payload.EventType != "submission.completed" ||
+            payload.EventType != "submission.expired" ||
+            payload.EventType != "submission.archived"
+        ) throw new InvalidOperationException("Invalid webhook event from DocuSeal api");
+
     }
 
     public async Task<RestResponse> GetAllTemplates(CancellationToken ct = default)

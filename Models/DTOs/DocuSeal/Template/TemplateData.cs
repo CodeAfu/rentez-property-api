@@ -22,6 +22,4 @@ public class WebhookData
     public List<Submitter> Submitters { get; set; } = new List<Submitter>();
     [JsonPropertyName("documents")]
     public List<Document> Documents { get; set; } = new List<Document>();
-    [JsonPropertyName("deline_reason")]
-    public string? DeclineReason { get; set; }
 }

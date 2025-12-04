@@ -17,6 +17,7 @@ public class ConfigService
     public string? GetWebhookSecret() => _config["DocuSeal:WebhookSecret"];
     public string? GetTestEmail() => _config["TestEmail"];
     public string? GetProdEmail() => _config["ProdEmail"];
+    public string? GetWebURL() => _config["WebURL"];
     public JwtInfo GetJwtInfo()
     {
         var tokenValidityMins = int.Parse(_config["Jwt:TokenValidityMins"]
