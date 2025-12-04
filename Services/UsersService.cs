@@ -168,6 +168,28 @@ public class UsersService
         if (!string.IsNullOrWhiteSpace(request.Ethnicity))
             user.Ethnicity = request.Ethnicity;
 
+        // Application Profile fields
+        if (request.MonthlyIncome.HasValue)
+            user.MonthlyIncome = request.MonthlyIncome;
+
+        if (!string.IsNullOrWhiteSpace(request.EmployerName))
+            user.EmployerName = request.EmployerName;
+
+        if (!string.IsNullOrWhiteSpace(request.GovernmentIdType))
+            user.GovernmentIdType = request.GovernmentIdType;
+
+        if (!string.IsNullOrWhiteSpace(request.GovernmentIdNumber))
+            user.GovernmentIdNumber = request.GovernmentIdNumber;
+
+        if (request.NumberOfOccupants.HasValue)
+            user.NumberOfOccupants = request.NumberOfOccupants;
+
+        if (request.HasPets.HasValue)
+            user.HasPets = request.HasPets;
+
+        if (!string.IsNullOrWhiteSpace(request.PetDetails))
+            user.PetDetails = request.PetDetails;
+
         user.UpdatedAt = DateTime.UtcNow;
         await _dbContext.SaveChangesAsync();
         return user;
@@ -186,9 +208,13 @@ public class UsersService
     public async Task<ApplicantProfileResponse> CreateProfileAsync(Guid userId, CreateApplicantProfileRequest request)
     {
         var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.Id == userId);
-
         if (user == null)
             throw new KeyNotFoundException("User does not exist");
+
+        // Validate required fields
+        if (string.IsNullOrWhiteSpace(request.GovernmentIdType) ||
+            string.IsNullOrWhiteSpace(request.GovernmentIdNumber))
+            throw new InvalidOperationException("Government ID information is required");
 
         user.MonthlyIncome = request.MonthlyIncome;
         user.EmployerName = request.EmployerName;
@@ -200,15 +226,15 @@ public class UsersService
 
         await _dbContext.SaveChangesAsync();
 
-        return new ApplicantProfileResponse()
+        return new ApplicantProfileResponse
         {
-            MonthlyIncome = request.MonthlyIncome,
-            EmployerName = request.EmployerName,
-            GovernmentIdType = request.GovernmentIdType,
-            GovernmentIdNumber = request.GovernmentIdNumber,
-            NumberOfOccupants = request.NumberOfOccupants,
-            HasPets = request.HasPets,
-            PetDetails = request.PetDetails,
+            MonthlyIncome = user.MonthlyIncome,
+            EmployerName = user.EmployerName,
+            GovernmentIdType = user.GovernmentIdType,
+            GovernmentIdNumber = user.GovernmentIdNumber,
+            NumberOfOccupants = user.NumberOfOccupants,
+            HasPets = user.HasPets,
+            PetDetails = user.PetDetails,
         };
     }
 
