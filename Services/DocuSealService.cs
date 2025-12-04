@@ -26,6 +26,9 @@ public class DocuSealService
 
     public async Task<string> GetBuilderToken(string userEmail, string externalId, string propertyId, string? templateId = null)
     {
+        _logger.LogInformation($"External ID: {externalId}");
+        _logger.LogInformation($"Property ID: {propertyId}");
+        _logger.LogInformation($"Template ID: {templateId}");
         var apiKey = _config.GetDocuSealAuthToken()!;
         var secret = Encoding.UTF8.GetBytes(apiKey);
         var payload = new Dictionary<string, object>
@@ -43,18 +46,22 @@ public class DocuSealService
             throw new Exception("No external ID provided");
         }
 
-        if (string.IsNullOrEmpty(templateId))
+        if (!string.IsNullOrEmpty(templateId))
         {
-            throw new Exception("No external ID provided");
-        }
+            var dbTemplateId = await _dbContext.Property
+                .Where(p => p.Id == Guid.Parse(propertyId))
+                .Select(p => p.Agreement != null ? p.Agreement.TemplateId : null)
+                .FirstOrDefaultAsync();
 
-        var property = await _dbContext.Property
-            .Include(p => p.Agreement)
-            .FirstOrDefaultAsync(p => p.Agreement != null && p.Agreement.TemplateId == templateId);
+            _logger.LogInformation("Fetched Template ID: {Property}", dbTemplateId);
 
-        if (property == null)
-        {
-            throw new Exception($"No property found for templateId: {templateId}");
+            if (dbTemplateId == null)
+            {
+                throw new Exception($"Property {propertyId} does not have a valid Agreement/Template.");
+            }
+
+            _logger.LogInformation("Set template_id: {TemplateId}", dbTemplateId);
+            payload["template_id"] = dbTemplateId;
         }
 
         _logger.LogInformation("Set user_email: {Email}", userEmail);
@@ -62,9 +69,6 @@ public class DocuSealService
 
         _logger.LogInformation("Set external_id: {ExternalId}", externalId);
         payload["external_id"] = $"{externalId}:{propertyId}";
-
-        _logger.LogInformation("Set template_id: {TemplateId}", templateId);
-        payload["template_id"] = templateId;
 
         var header = Base64UrlEncode(Encoding.UTF8.GetBytes("{\"alg\":\"HS256\",\"typ\":\"JWT\"}"));
         var payloadJson = Base64UrlEncode(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(payload)));

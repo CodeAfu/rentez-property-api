@@ -25,7 +25,7 @@ public class DocuSealController : ControllerBase
 
     [HttpPost("builder-token")]
     [Authorize(AuthenticationSchemes = "Bearer", Policy = "UserOrAdmin")]
-    public IActionResult GetBuilderToken([FromQuery] string propertyId, [FromQuery] string templateId)
+    public IActionResult GetBuilderToken([FromQuery] string propertyId, [FromQuery] string? templateId)
     {
         // var adminEmail = _config.GetTestEmail();
         var adminEmail = _config.GetProdEmail();
@@ -47,7 +47,7 @@ public class DocuSealController : ControllerBase
 
         try
         {
-            var tokenString = _docuSealService.GetBuilderToken(adminEmail, currentUserId, propertyId);
+            var tokenString = _docuSealService.GetBuilderToken(adminEmail, currentUserId, propertyId, templateId);
             return Ok(new { token = tokenString });
         }
         catch (Exception ex)

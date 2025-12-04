@@ -206,6 +206,7 @@ public class AuthController : ControllerBase
             return StatusCode(500, new { message = "Internal server error" });
         }
     }
+
     private UnauthorizedObjectResult UnauthorizedResponse(string error, string message)
     {
         return Unauthorized(new { error, message });
