@@ -234,7 +234,12 @@ public class UsersController : ControllerBase
         catch (ProfileNotFoundException)
         {
             _logger.LogInformation("Profile incomplete for user {UserId}", userId);
-            return Redirect($"{_configService.GetWebURL()}/property/{propertyId}/RentOutProperty");
+            return BadRequest(new 
+            { 
+                message = "Profile incomplete. Please complete your profile first.",
+                redirectTo = $"/property/{propertyId}/RentOutProperty",
+                profileIncomplete = true
+            });
         }
         catch (ObjectNotFoundException ex)
         {
