@@ -224,7 +224,7 @@ public class UsersController : ControllerBase
     public async Task<IActionResult> SendRentPropertyRequest([FromQuery] string propertyId)
     {
         var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-        // if (userId == null) return Unauthorized("Please login to proceed");
+        if (userId == null) return Unauthorized("Please login to proceed");
         _logger.LogInformation($"Web URL: {_configService.GetWebURL()}");
         try
         {
@@ -234,8 +234,8 @@ public class UsersController : ControllerBase
         catch (ProfileNotFoundException)
         {
             _logger.LogInformation("Profile incomplete for user {UserId}", userId);
-            return BadRequest(new 
-            { 
+            return BadRequest(new
+            {
                 message = "Profile incomplete. Please complete your profile first.",
                 redirectTo = $"/property/{propertyId}/RentOutProperty",
                 profileIncomplete = true

@@ -88,6 +88,14 @@ public class DocuSealController : ControllerBase
             await _docuSealService.SubmissionWebhook(payload);
             return Ok();
         }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogError(ex.Message);
+            return StatusCode(StatusCodes.Status405MethodNotAllowed, new
+            {
+                message = ex.Message
+            });
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex.Message);

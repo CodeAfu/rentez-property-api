@@ -12,9 +12,11 @@ public class DocuSealPDFTemplate : IIdentifiable, ITimestampedEntity
     [MaxLength(255)]
     public string TemplateId { get; set; } = string.Empty;
 
-    [Required]
     [MaxLength(255)]
-    public string Name { get; set; } = string.Empty;
+    public string? Name { get; set; } = string.Empty;
+
+    [MaxLength(255)]
+    public string? Slug { get; set; } = string.Empty;
 
     [Required]
     [Column(TypeName = "jsonb")]

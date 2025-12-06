@@ -153,8 +153,12 @@ public class DocuSealService
             payload.EventType != "submission.completed" ||
             payload.EventType != "submission.expired" ||
             payload.EventType != "submission.archived"
-        ) throw new InvalidOperationException("Invalid webhook event from DocuSeal api");
+        ) throw new InvalidOperationException("Invalid webhook event from DocuSeal API");
 
+        if (payload.EventType == "submission.created")
+        {
+
+        }
     }
 
     public async Task<RestResponse> GetAllTemplates(CancellationToken ct = default)
