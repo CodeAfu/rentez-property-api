@@ -142,7 +142,7 @@ public class PropertyController : ControllerBase
     {
         try
         {
-            var result = _propertyService.Edit(id, dto);
+            var result = await _propertyService.Edit(id, dto);
             return Ok();
         }
         catch (ObjectNotFoundException ex)

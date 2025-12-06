@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace RentEZApi.Models.Entities;
 
-public class DocuSealSubmissions : IIdentifiable, ITimestampedEntity
+public class DocuSealLeaseSubmissions : IIdentifiable, ITimestampedEntity
 {
     [Key]
     public Guid Id { get; set; }

@@ -17,6 +17,7 @@ public class PropertyDbContext : IdentityDbContext<User, IdentityRole<Guid>, Gui
     public DbSet<RefreshToken> RefreshTokens { get; set; } = null!;
     public DbSet<Property> Property { get; set; } = null!;
     public DbSet<PropertyApplication> PropertyApplications { get; set; } = null!;
+    public DbSet<DocuSealLeaseSubmissions> DocuSealLeaseSubmissions { get; set; } = null!;
 
     // protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     // {
@@ -77,6 +78,13 @@ public class PropertyDbContext : IdentityDbContext<User, IdentityRole<Guid>, Gui
         {
             entity.HasIndex(e => e.PropertyId);
             entity.HasIndex(e => e.UserId);
+        });
+
+        modelBuilder.Entity<DocuSealLeaseSubmissions>(entity =>
+        {
+            entity.HasIndex(e => e.PropertyId);
+            entity.HasIndex(e => e.Email);
+            entity.HasIndex(e => e.ExternalId);
         });
     }
 
