@@ -9,8 +9,7 @@ public class DocuSealTemplate : IIdentifiable, ITimestampedEntity
     public Guid Id { get; set; }
 
     [Required]
-    [MaxLength(255)]
-    public string TemplateId { get; set; } = string.Empty;
+    public long TemplateId { get; set; }
 
     [MaxLength(255)]
     public string? Name { get; set; }

@@ -5,17 +5,20 @@ namespace RentEZApi.Models.DTOs.DocuSeal.Field;
 public class DocuSealArea
 {
     [JsonPropertyName("x")]
-    public int X { get; set; }
+    public decimal X { get; set; }
 
     [JsonPropertyName("y")]
-    public int Y { get; set; }
+    public decimal Y { get; set; }
 
     [JsonPropertyName("w")]
-    public int W { get; set; }
+    public decimal W { get; set; }
 
     [JsonPropertyName("h")]
-    public int H { get; set; }
+    public decimal H { get; set; }
 
     [JsonPropertyName("page")]
     public int Page { get; set; }
+
+    [JsonPropertyName("attachment_uuid")]
+    public string? AttachmentUuid { get; set; }
 }

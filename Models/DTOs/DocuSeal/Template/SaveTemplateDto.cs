@@ -7,8 +7,8 @@ namespace RentEZApi.Models.DTOs.DocuSeal.Template;
 
 public class SaveTemplateDto
 {
-    [JsonPropertyName("templateId")]
-    public string TemplateId { get; set; } = string.Empty;
+    [JsonPropertyName("id")]
+    public long TemplateId { get; set; }
 
     [JsonPropertyName("slug")]
     public string Slug { get; set; } = string.Empty;

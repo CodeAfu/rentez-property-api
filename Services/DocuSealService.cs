@@ -1,10 +1,8 @@
-using System.Net;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using RentEZApi.Data;
-using RentEZApi.Models.DTOs.DocuSeal;
 using RentEZApi.Models.DTOs.DocuSeal.Template;
 using RentEZApi.Models.Entities;
 using RestSharp;
@@ -52,7 +50,7 @@ public class DocuSealService
         {
             var dbTemplateId = await _dbContext.PropertyListings
                 .Where(p => p.Id == Guid.Parse(propertyId))
-                .Select(p => p.Agreement != null ? p.Agreement.TemplateId : null)
+                .Select(p => p.Agreement != null ? p.Agreement.TemplateId : (long?)null)
                 .FirstOrDefaultAsync();
 
             _logger.LogInformation("Fetched Template ID: {Property}", dbTemplateId);
@@ -63,7 +61,7 @@ public class DocuSealService
             }
 
             _logger.LogInformation("Set template_id: {TemplateId}", dbTemplateId);
-            payload["template_id"] = dbTemplateId;
+            payload["template_id"] = dbTemplateId.ToString()!;
         }
 
         _logger.LogInformation("Set user_email: {Email}", userEmail);
@@ -88,17 +86,16 @@ public class DocuSealService
     {
         var property = await _dbContext.PropertyListings
             .Include(p => p.Agreement)
-            .FirstOrDefaultAsync(p => p.Id == propertyId && p.OwnerId == userId);
+            .FirstOrDefaultAsync(p => p.Id == propertyId);
 
         if (property == null)
-        {
             throw new InvalidOperationException($"Property {propertyId} not found or not owned by user {userId}");
-        }
 
-        if (property.AgreementId != templateId)
-        {
-            throw new InvalidOperationException($"Template {templateId} does not match property agreement");
-        }
+        if (property.OwnerId != userId)
+            throw new UnauthorizedAccessException($"User {userId} does not own property {propertyId}");
+
+        if (property.AgreementId.HasValue && property.AgreementId != templateId)
+            throw new InvalidOperationException($"Property already linked to different template");
 
         var agreement = await _dbContext.DocuSealPDFTemplates
             .FirstOrDefaultAsync(t => t.Id == templateId);
@@ -107,7 +104,6 @@ public class DocuSealService
         {
             agreement = new DocuSealTemplate
             {
-                Id = templateId,
                 TemplateId = dto.TemplateId,
                 Name = dto.Name,
                 Slug = dto.Slug,
@@ -118,6 +114,8 @@ public class DocuSealService
                 UpdatedAt = DateTime.UtcNow
             };
             _dbContext.DocuSealPDFTemplates.Add(agreement);
+
+            property.AgreementId = agreement.Id;
         }
         else
         {

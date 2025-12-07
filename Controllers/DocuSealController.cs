@@ -2,6 +2,7 @@ using System.Security.Claims;
 using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using RentEZApi.Attributes;
 using RentEZApi.Models.DTOs.DocuSeal.Template;
 using RentEZApi.Services;
 
@@ -59,9 +60,9 @@ public class DocuSealController : ControllerBase
         }
     }
 
-    [HttpPost("property/{propertyId}/template/{templateId}/save")]
+    [HttpPost("{propertyId}/{templateId}/save-lease")]
     [Authorize(AuthenticationSchemes = "Bearer", Policy = "UserOrAdmin")]
-    public IActionResult SaveTemplateData(Guid propertyId, Guid templateId, SaveTemplateDto payload)
+    public IActionResult SaveTemplateData(Guid propertyId, Guid templateId, [FromBody] SaveTemplateDto payload)
     {
         var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
         try
@@ -75,6 +76,14 @@ public class DocuSealController : ControllerBase
             return BadRequest(new
             {
                 message = "Invalid input"
+            });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.LogError(ex, "User Unauthorized");
+            return Unauthorized(new
+            {
+                message = "You are not authorized to do this action"
             });
         }
         catch (Exception ex)
