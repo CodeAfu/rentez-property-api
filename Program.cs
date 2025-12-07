@@ -164,6 +164,8 @@ builder.Services.ConfigureApplicationCookie(options =>
 
 builder.Services.AddSingleton<ConfigService>();
 
+builder.Services.AddHttpClient();
+
 builder.Services.AddScoped<JwtService>();
 builder.Services.AddScoped<UsersService>();
 builder.Services.AddScoped<PropertyService>();

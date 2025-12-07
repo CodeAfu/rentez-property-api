@@ -16,17 +16,19 @@ public class DocuSealService
     private readonly PropertyDbContext _dbContext;
     private readonly ConfigService _config;
     private readonly ILogger<DocuSealService> _logger;
+    private readonly HttpClient _httpClient;
 
-    public DocuSealService(PropertyDbContext dbContext, ConfigService config, ILogger<DocuSealService> logger)
+    public DocuSealService(PropertyDbContext dbContext, ConfigService config, ILogger<DocuSealService> logger, IHttpClientFactory httpClientFactory)
     {
         _dbContext = dbContext;
         _config = config;
         _logger = logger;
+        _httpClient = httpClientFactory.CreateClient();
     }
 
-    public async Task<string> GetBuilderToken(string userEmail, string externalId, string propertyId, string? templateId = null)
+    public async Task<string> GetBuilderToken(string userEmail, string userId, string propertyId, string? templateId = null)
     {
-        _logger.LogInformation($"External ID: {externalId}");
+        _logger.LogInformation($"External ID: {userId}");
         _logger.LogInformation($"Property ID: {propertyId}");
         _logger.LogInformation($"Template ID: {templateId}");
         var apiKey = _config.GetDocuSealAuthToken()!;
@@ -41,7 +43,7 @@ public class DocuSealService
             throw new Exception("No email provided");
         }
 
-        if (string.IsNullOrWhiteSpace(externalId))
+        if (string.IsNullOrWhiteSpace(userId))
         {
             throw new Exception("No external ID provided");
         }
@@ -67,8 +69,8 @@ public class DocuSealService
         _logger.LogInformation("Set user_email: {Email}", userEmail);
         payload["user_email"] = userEmail;
 
-        _logger.LogInformation("Set external_id: {ExternalId}", externalId);
-        payload["external_id"] = $"{externalId}:{propertyId}";
+        _logger.LogInformation("Set external_id: {ExternalId}", userId);
+        payload["external_id"] = $"{userId}:{propertyId}";
 
         var header = Base64UrlEncode(Encoding.UTF8.GetBytes("{\"alg\":\"HS256\",\"typ\":\"JWT\"}"));
         var payloadJson = Base64UrlEncode(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(payload)));
@@ -81,6 +83,8 @@ public class DocuSealService
             return $"{headerPayload}.{signature}";
         }
     }
+
+    // Template Webhook
 
     public async Task TemplateWebhook(DocuSealWebhookPayload payload)
     {
@@ -151,12 +155,28 @@ public class DocuSealService
     {
         _logger.LogInformation("Processing submission.created for ID: {Id}", data.Id);
 
+        // Get first submitter info (tenant/signer)
+        var submitter = data.Submitters?.FirstOrDefault();
+
+        var propertyId = data.ExternalId?.Split(":")[1];
+
+        if (string.IsNullOrEmpty(propertyId))
+        {
+            throw new InvalidDataException($"No property ID found: {data.ExternalId}");
+        }
+
         var submission = new DocuSealLeaseSubmission
         {
+            Id = Guid.NewGuid(),
             SubmissionId = data.Id,
+            Name = submitter?.Name ?? data.Name,
+            Email = submitter?.Email,
             ExternalId = data.ExternalId,
             FolderName = data.FolderName,
-            Status = "pending",
+            Status = submitter?.Status ?? "pending",
+            Role = submitter?.Role,
+            PropertyId = Guid.Parse(propertyId), // Assuming ExternalId is PropertyId
+            OpenedAt = ParseDateTime(submitter?.OpenedAt),
             CreatedAt = data.CreatedAt,
             UpdatedAt = data.UpdatedAt
         };
@@ -164,30 +184,96 @@ public class DocuSealService
         _dbContext.DocuSealLeaseSubmissions.Add(submission);
         await _dbContext.SaveChangesAsync();
 
-        // Send notification to submitters
-        foreach (var submitter in data.Submitters ?? Enumerable.Empty<SubmitterDto>())
-        {
-            _logger.LogInformation("Submission sent to: {Email}", submitter.Email);
-        }
+        _logger.LogInformation("Submission created for: {Email}", submission.Email);
     }
 
     public async Task HandleSubmissionCompleted(WebhookData data)
     {
-        // Download signed documents from data.combined_document_url
-        // Update submission status
-        // Notify parties
+        _logger.LogInformation("Processing submission.completed for ID: {Id}", data.Id);
+
+        var submission = await _dbContext.DocuSealLeaseSubmissions
+            .FirstOrDefaultAsync(s => s.SubmissionId == data.Id);
+
+        if (submission == null)
+        {
+            throw new InvalidOperationException($"Submission {data.Id} not found");
+        }
+
+        var submitter = data.Submitters?.FirstOrDefault();
+
+        submission.Status = "completed";
+        submission.CompletedAt = ParseDateTime(submitter?.CompletedAt) ?? data.UpdatedAt;
+        submission.UpdatedAt = data.UpdatedAt;
+
+        if (data.Documents != null && data.Documents.Any())
+        {
+            var doc = data.Documents.First(); // Assuming one document per submission
+            if (!string.IsNullOrEmpty(doc.Url))
+            {
+                try
+                {
+                    var bytes = await _httpClient.GetByteArrayAsync(doc.Url);
+                    var fileName = $"{submission.Id}_{doc.Name ?? "document"}.pdf";
+                    var filePath = Path.Combine("storage", "agreements", fileName);
+
+                    Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
+                    await File.WriteAllBytesAsync(filePath, bytes);
+
+                    submission.DocumentData = bytes;
+                    submission.DocumentFileName = doc.Name;
+                    _logger.LogInformation("Downloaded document: {FileName}", fileName);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to download document: {Url}", doc.Url);
+                    throw;
+                }
+            }
+        }
+
+        await _dbContext.SaveChangesAsync();
+
+        _logger.LogInformation("Submission {Id} completed by {Email}", data.Id, submission.Email);
     }
 
     public async Task HandleSubmissionExpired(WebhookData data)
     {
-        // Mark as expired
-        // Send expiration notifications
+        _logger.LogInformation("Processing submission.expired for ID: {Id}", data.Id);
+
+        var submission = await _dbContext.DocuSealLeaseSubmissions
+            .FirstOrDefaultAsync(s => s.SubmissionId == data.Id);
+
+        if (submission == null)
+        {
+            throw new InvalidOperationException($"Submission {data.Id} not found");
+        }
+
+        submission.Status = "expired";
+        submission.UpdatedAt = data.UpdatedAt;
+
+        await _dbContext.SaveChangesAsync();
+
+        _logger.LogInformation("Submission {Id} expired for {Email}", data.Id, submission.Email);
     }
 
     public async Task HandleSubmissionArchived(WebhookData data)
     {
-        // Archive submission
-        // Clean up resources
+        _logger.LogInformation("Processing submission.archived for ID: {Id}", data.Id);
+
+        var submission = await _dbContext.DocuSealLeaseSubmissions
+            .FirstOrDefaultAsync(s => s.SubmissionId == data.Id);
+
+        if (submission == null)
+        {
+            throw new InvalidOperationException($"Submission {data.Id} not found");
+        }
+
+        submission.Status = "archived";
+        submission.UpdatedAt = data.UpdatedAt;
+
+        await _dbContext.SaveChangesAsync();
+
+        _logger.LogInformation("Submission {Id} archived", data.Id);
     }
 
     // Regular APIs
@@ -254,5 +340,15 @@ public class DocuSealService
     {
         var base64 = Convert.ToBase64String(data);
         return base64.TrimEnd('=').Replace('+', '-').Replace('/', '_');
+    }
+
+    private static DateTime? ParseDateTime(string? dateTimeString)
+    {
+        if (string.IsNullOrEmpty(dateTimeString))
+            return null;
+
+        return DateTime.TryParse(dateTimeString, out var result)
+            ? result.ToUniversalTime()
+            : null;
     }
 }

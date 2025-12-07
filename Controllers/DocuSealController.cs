@@ -2,6 +2,7 @@ using System.Security.Claims;
 using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using RentEZApi.Models.DTOs.DocuSeal;
 using RentEZApi.Models.DTOs.DocuSeal.Template;
 using RentEZApi.Services;
@@ -110,21 +111,30 @@ public class DocuSealController : ControllerBase
             }
             return Ok(new { received = true });
         }
+        catch (InvalidDataException ex)
+        {
+            _logger.LogError(ex, "Invalid data format");
+            return BadRequest(new { message = ex.Message });
+        }
         catch (InvalidOperationException ex)
         {
-            _logger.LogError(ex.Message);
-            return StatusCode(StatusCodes.Status405MethodNotAllowed, new
-            {
-                message = ex.Message
-            });
+            _logger.LogError(ex, "Operation failed");
+            return NotFound(new { message = ex.Message });
+        }
+        catch (HttpRequestException ex)
+        {
+            _logger.LogError(ex, "Failed to download document");
+            return StatusCode(502, new { message = "Failed to download document from DocuSeal" });
+        }
+        catch (DbUpdateException ex)
+        {
+            _logger.LogError(ex, "Database error");
+            return StatusCode(500, new { message = "Database operation failed" });
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex.Message);
-            return StatusCode(500, new
-            {
-                message = "Something went wrong"
-            });
+            _logger.LogError(ex, "Unexpected error processing webhook");
+            return StatusCode(500, new { message = "Internal server error" });
         }
     }
 

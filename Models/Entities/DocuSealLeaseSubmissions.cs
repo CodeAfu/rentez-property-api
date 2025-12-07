@@ -17,6 +17,11 @@ public class DocuSealLeaseSubmission : IIdentifiable, ITimestampedEntity
     public string? FolderName { get; set; }
     public string? Role { get; set; } = string.Empty;
 
+    // TODO: Store in S3
+    // Document (download via webhook)
+    public byte[]? DocumentData { get; set; }
+    public string? DocumentFileName { get; set; }
+
     // Foreign Key
     [Required]
     [ForeignKey(nameof(Property))]
