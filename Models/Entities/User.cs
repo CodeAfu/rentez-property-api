@@ -58,5 +58,5 @@ public class User : IdentityUser<Guid>, IIdentifiable, ITimestampedEntity
     [Required]
     public DateTime UpdatedAt { get; set; }
 
-    public ICollection<DocuSealPDFTemplate> Templates { get; set; } = new List<DocuSealPDFTemplate>();
+    public ICollection<DocuSealTemplate> Templates { get; set; } = new List<DocuSealTemplate>();
 }

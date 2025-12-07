@@ -84,198 +84,245 @@ public class DocuSealService
         }
     }
 
-    // Template Webhook
-
-    public async Task TemplateWebhook(DocuSealWebhookPayload payload)
+    public async Task SaveDocuSealTemplate(Guid propertyId, Guid templateId, Guid userId, SaveTemplateDto dto)
     {
-        _logger.LogInformation("Payload: {JsonPayload}", JsonSerializer.Serialize(payload));
-        if (payload.EventType == "template.created" || payload.EventType == "template.updated")
+        var property = await _dbContext.PropertyListings
+            .Include(p => p.Agreement)
+            .FirstOrDefaultAsync(p => p.Id == propertyId && p.OwnerId == userId);
+
+        if (property == null)
         {
-            if (string.IsNullOrEmpty(payload.Data.ExternalId))
-                throw new Exception("ExternalId required");
-
-            var parts = payload.Data.ExternalId.Split(':');
-
-            if (parts.Length != 2)
-                throw new Exception($"Invalid ExternalId format: {payload.Data.ExternalId}");
-
-            var ownerId = Guid.Parse(parts[0]);
-            var propertyId = Guid.Parse(parts[1]);
-
-            var template = await _dbContext.DocuSealPDFTemplates
-                .FirstOrDefaultAsync(t => t.TemplateId == payload.Data.Id.ToString());
-
-            if (template != null)
-            {
-                template.Name = payload.Data.Name;
-                template.DocumentJson = JsonSerializer.Serialize(payload.Data);
-                template.UpdatedAt = DateTime.UtcNow;
-            }
-            else
-            {
-                template = new DocuSealPDFTemplate
-                {
-                    TemplateId = payload.Data.Id.ToString(),
-                    Name = payload.Data.Name,
-                    DocumentJson = JsonSerializer.Serialize(payload.Data),
-                    SubmittersJson = JsonSerializer.Serialize(payload.Data.Submitters),
-                    OwnerId = ownerId,
-                    CreatedAt = payload.Data.CreatedAt,
-                    UpdatedAt = payload.Data.UpdatedAt
-                };
-
-                _dbContext.DocuSealPDFTemplates.Add(template);
-            }
-            var property = await _dbContext.PropertyListings
-                .FirstOrDefaultAsync(p => p.Id == propertyId);
-
-            if (property != null)
-            {
-                // Security check: Ensure the property actually belongs to the user mentioned in the token
-                if (property.OwnerId != ownerId)
-                {
-                    _logger.LogWarning($"Security Warning: User {ownerId} tried to attach template to Property {propertyId} owned by {property.OwnerId}");
-                    throw new UnauthorizedAccessException("Property owner mismatch");
-                }
-
-                // EF Core will automatically update AgreementId when we set this navigation property
-                property.Agreement = template;
-            }
-            else
-            {
-                _logger.LogWarning($"Property {propertyId} not found for template linking.");
-            }
-            await _dbContext.SaveChangesAsync();
-        }
-    }
-
-    // Submission Webhooks
-
-    public async Task HandleSubmissionCreated(WebhookData data)
-    {
-        _logger.LogInformation("Processing submission.created for ID: {Id}", data.Id);
-
-        // Get first submitter info (tenant/signer)
-        var submitter = data.Submitters?.FirstOrDefault();
-
-        var propertyId = data.ExternalId?.Split(":")[1];
-
-        if (string.IsNullOrEmpty(propertyId))
-        {
-            throw new InvalidDataException($"No property ID found: {data.ExternalId}");
+            throw new InvalidOperationException($"Property {propertyId} not found or not owned by user {userId}");
         }
 
-        var submission = new DocuSealLeaseSubmission
+        if (property.AgreementId != templateId)
         {
-            Id = Guid.NewGuid(),
-            SubmissionId = data.Id,
-            Name = submitter?.Name ?? data.Name,
-            Email = submitter?.Email,
-            ExternalId = data.ExternalId,
-            FolderName = data.FolderName,
-            Status = submitter?.Status ?? "pending",
-            Role = submitter?.Role,
-            PropertyId = Guid.Parse(propertyId), // Assuming ExternalId is PropertyId
-            OpenedAt = ParseDateTime(submitter?.OpenedAt),
-            CreatedAt = data.CreatedAt,
-            UpdatedAt = data.UpdatedAt
-        };
-
-        _dbContext.DocuSealLeaseSubmissions.Add(submission);
-        await _dbContext.SaveChangesAsync();
-
-        _logger.LogInformation("Submission created for: {Email}", submission.Email);
-    }
-
-    public async Task HandleSubmissionCompleted(WebhookData data)
-    {
-        _logger.LogInformation("Processing submission.completed for ID: {Id}", data.Id);
-
-        var submission = await _dbContext.DocuSealLeaseSubmissions
-            .FirstOrDefaultAsync(s => s.SubmissionId == data.Id);
-
-        if (submission == null)
-        {
-            throw new InvalidOperationException($"Submission {data.Id} not found");
+            throw new InvalidOperationException($"Template {templateId} does not match property agreement");
         }
 
-        var submitter = data.Submitters?.FirstOrDefault();
+        var agreement = await _dbContext.DocuSealPDFTemplates
+            .FirstOrDefaultAsync(t => t.Id == templateId);
 
-        submission.Status = "completed";
-        submission.CompletedAt = ParseDateTime(submitter?.CompletedAt) ?? data.UpdatedAt;
-        submission.UpdatedAt = data.UpdatedAt;
-
-        if (data.Documents != null && data.Documents.Any())
+        if (agreement == null)
         {
-            var doc = data.Documents.First(); // Assuming one document per submission
-            if (!string.IsNullOrEmpty(doc.Url))
+            agreement = new DocuSealTemplate
             {
-                try
-                {
-                    var bytes = await _httpClient.GetByteArrayAsync(doc.Url);
-                    var fileName = $"{submission.Id}_{doc.Name ?? "document"}.pdf";
-                    var filePath = Path.Combine("storage", "agreements", fileName);
-
-                    Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
-                    await File.WriteAllBytesAsync(filePath, bytes);
-
-                    submission.DocumentData = bytes;
-                    submission.DocumentFileName = doc.Name;
-                    _logger.LogInformation("Downloaded document: {FileName}", fileName);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Failed to download document: {Url}", doc.Url);
-                    throw;
-                }
-            }
+                Id = templateId,
+                TemplateId = dto.TemplateId,
+                Name = dto.Name,
+                Slug = dto.Slug,
+                DocumentsJson = JsonSerializer.Serialize(dto.Documents),
+                SubmittersJson = JsonSerializer.Serialize(dto.Submitters),
+                FieldsJson = JsonSerializer.Serialize(dto.Fields),
+                OwnerId = userId,
+                UpdatedAt = DateTime.UtcNow
+            };
+            _dbContext.DocuSealPDFTemplates.Add(agreement);
+        }
+        else
+        {
+            agreement.TemplateId = dto.TemplateId;
+            agreement.Name = dto.Name;
+            agreement.Slug = dto.Slug;
+            agreement.DocumentsJson = JsonSerializer.Serialize(dto.Documents);
+            agreement.SubmittersJson = JsonSerializer.Serialize(dto.Submitters);
+            agreement.FieldsJson = JsonSerializer.Serialize(dto.Fields);
+            agreement.UpdatedAt = DateTime.UtcNow;
         }
 
         await _dbContext.SaveChangesAsync();
-
-        _logger.LogInformation("Submission {Id} completed by {Email}", data.Id, submission.Email);
     }
 
-    public async Task HandleSubmissionExpired(WebhookData data)
-    {
-        _logger.LogInformation("Processing submission.expired for ID: {Id}", data.Id);
-
-        var submission = await _dbContext.DocuSealLeaseSubmissions
-            .FirstOrDefaultAsync(s => s.SubmissionId == data.Id);
-
-        if (submission == null)
-        {
-            throw new InvalidOperationException($"Submission {data.Id} not found");
-        }
-
-        submission.Status = "expired";
-        submission.UpdatedAt = data.UpdatedAt;
-
-        await _dbContext.SaveChangesAsync();
-
-        _logger.LogInformation("Submission {Id} expired for {Email}", data.Id, submission.Email);
-    }
-
-    public async Task HandleSubmissionArchived(WebhookData data)
-    {
-        _logger.LogInformation("Processing submission.archived for ID: {Id}", data.Id);
-
-        var submission = await _dbContext.DocuSealLeaseSubmissions
-            .FirstOrDefaultAsync(s => s.SubmissionId == data.Id);
-
-        if (submission == null)
-        {
-            throw new InvalidOperationException($"Submission {data.Id} not found");
-        }
-
-        submission.Status = "archived";
-        submission.UpdatedAt = data.UpdatedAt;
-
-        await _dbContext.SaveChangesAsync();
-
-        _logger.LogInformation("Submission {Id} archived", data.Id);
-    }
-
+    // // Template Webhook
+    // public async Task TemplateWebhook(DocuSealWebhookPayload payload)
+    // {
+    //     _logger.LogInformation("Payload: {JsonPayload}", JsonSerializer.Serialize(payload));
+    //     if (payload.EventType == "template.created" || payload.EventType == "template.updated")
+    //     {
+    //         if (string.IsNullOrEmpty(payload.Data.ExternalId))
+    //             throw new Exception("ExternalId required");
+    //
+    //         var parts = payload.Data.ExternalId.Split(':');
+    //
+    //         if (parts.Length != 2)
+    //             throw new Exception($"Invalid ExternalId format: {payload.Data.ExternalId}");
+    //
+    //         var ownerId = Guid.Parse(parts[0]);
+    //         var propertyId = Guid.Parse(parts[1]);
+    //
+    //         var template = await _dbContext.DocuSealPDFTemplates
+    //             .FirstOrDefaultAsync(t => t.TemplateId == payload.Data.Id.ToString());
+    //
+    //         if (template != null)
+    //         {
+    //             template.Name = payload.Data.Name;
+    //             template.DocumentJson = JsonSerializer.Serialize(payload.Data);
+    //             template.UpdatedAt = DateTime.UtcNow;
+    //         }
+    //         else
+    //         {
+    //             template = new DocuSealPDFTemplate
+    //             {
+    //                 TemplateId = payload.Data.Id.ToString(),
+    //                 Name = payload.Data.Name,
+    //                 DocumentJson = JsonSerializer.Serialize(payload.Data),
+    //                 SubmittersJson = JsonSerializer.Serialize(payload.Data.Submitters),
+    //                 OwnerId = ownerId,
+    //                 CreatedAt = payload.Data.CreatedAt,
+    //                 UpdatedAt = payload.Data.UpdatedAt
+    //             };
+    //
+    //             _dbContext.DocuSealPDFTemplates.Add(template);
+    //         }
+    //         var property = await _dbContext.PropertyListings
+    //             .FirstOrDefaultAsync(p => p.Id == propertyId);
+    //
+    //         if (property != null)
+    //         {
+    //             // Security check: Ensure the property actually belongs to the user mentioned in the token
+    //             if (property.OwnerId != ownerId)
+    //             {
+    //                 _logger.LogWarning($"Security Warning: User {ownerId} tried to attach template to Property {propertyId} owned by {property.OwnerId}");
+    //                 throw new UnauthorizedAccessException("Property owner mismatch");
+    //             }
+    //
+    //             // EF Core will automatically update AgreementId when we set this navigation property
+    //             property.Agreement = template;
+    //         }
+    //         else
+    //         {
+    //             _logger.LogWarning($"Property {propertyId} not found for template linking.");
+    //         }
+    //         await _dbContext.SaveChangesAsync();
+    //     }
+    // }
+    //
+    // // Submission Webhooks
+    // public async Task HandleSubmissionCreated(WebhookData data)
+    // {
+    //     _logger.LogInformation("Processing submission.created for ID: {Id}", data.Id);
+    //
+    //     // Get first submitter info (tenant/signer)
+    //     var submitter = data.Submitters?.FirstOrDefault();
+    //
+    //     var propertyId = data.ExternalId?.Split(":")[1];
+    //
+    //     if (string.IsNullOrEmpty(propertyId))
+    //     {
+    //         throw new InvalidDataException($"No property ID found: {data.ExternalId}");
+    //     }
+    //
+    //     var submission = new DocuSealLeaseSubmission
+    //     {
+    //         Id = Guid.NewGuid(),
+    //         SubmissionId = data.Id,
+    //         Name = submitter?.Name ?? data.Name,
+    //         Email = submitter?.Email,
+    //         ExternalId = data.ExternalId,
+    //         FolderName = data.FolderName,
+    //         Status = submitter?.Status ?? "pending",
+    //         Role = submitter?.Role,
+    //         PropertyId = Guid.Parse(propertyId), // Assuming ExternalId is PropertyId
+    //         OpenedAt = ParseDateTime(submitter?.OpenedAt),
+    //         CreatedAt = data.CreatedAt,
+    //         UpdatedAt = data.UpdatedAt
+    //     };
+    //
+    //     _dbContext.DocuSealLeaseSubmissions.Add(submission);
+    //     await _dbContext.SaveChangesAsync();
+    //
+    //     _logger.LogInformation("Submission created for: {Email}", submission.Email);
+    // }
+    //
+    // public async Task HandleSubmissionCompleted(WebhookData data)
+    // {
+    //     _logger.LogInformation("Processing submission.completed for ID: {Id}", data.Id);
+    //
+    //     var submission = await _dbContext.DocuSealLeaseSubmissions
+    //         .FirstOrDefaultAsync(s => s.SubmissionId == data.Id);
+    //
+    //     if (submission == null)
+    //     {
+    //         throw new InvalidOperationException($"Submission {data.Id} not found");
+    //     }
+    //
+    //     var submitter = data.Submitters?.FirstOrDefault();
+    //
+    //     submission.Status = "completed";
+    //     submission.CompletedAt = ParseDateTime(submitter?.CompletedAt) ?? data.UpdatedAt;
+    //     submission.UpdatedAt = data.UpdatedAt;
+    //
+    //     if (data.Documents != null && data.Documents.Any())
+    //     {
+    //         var doc = data.Documents.First(); // Assuming one document per submission
+    //         if (!string.IsNullOrEmpty(doc.Url))
+    //         {
+    //             try
+    //             {
+    //                 var bytes = await _httpClient.GetByteArrayAsync(doc.Url);
+    //                 var fileName = $"{submission.Id}_{doc.Name ?? "document"}.pdf";
+    //                 var filePath = Path.Combine("storage", "agreements", fileName);
+    //
+    //                 Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
+    //                 await File.WriteAllBytesAsync(filePath, bytes);
+    //
+    //                 submission.DocumentData = bytes;
+    //                 submission.DocumentFileName = doc.Name;
+    //                 _logger.LogInformation("Downloaded document: {FileName}", fileName);
+    //             }
+    //             catch (Exception ex)
+    //             {
+    //                 _logger.LogError(ex, "Failed to download document: {Url}", doc.Url);
+    //                 throw;
+    //             }
+    //         }
+    //     }
+    //
+    //     await _dbContext.SaveChangesAsync();
+    //
+    //     _logger.LogInformation("Submission {Id} completed by {Email}", data.Id, submission.Email);
+    // }
+    //
+    // public async Task HandleSubmissionExpired(WebhookData data)
+    // {
+    //     _logger.LogInformation("Processing submission.expired for ID: {Id}", data.Id);
+    //
+    //     var submission = await _dbContext.DocuSealLeaseSubmissions
+    //         .FirstOrDefaultAsync(s => s.SubmissionId == data.Id);
+    //
+    //     if (submission == null)
+    //     {
+    //         throw new InvalidOperationException($"Submission {data.Id} not found");
+    //     }
+    //
+    //     submission.Status = "expired";
+    //     submission.UpdatedAt = data.UpdatedAt;
+    //
+    //     await _dbContext.SaveChangesAsync();
+    //
+    //     _logger.LogInformation("Submission {Id} expired for {Email}", data.Id, submission.Email);
+    // }
+    //
+    // public async Task HandleSubmissionArchived(WebhookData data)
+    // {
+    //     _logger.LogInformation("Processing submission.archived for ID: {Id}", data.Id);
+    //
+    //     var submission = await _dbContext.DocuSealLeaseSubmissions
+    //         .FirstOrDefaultAsync(s => s.SubmissionId == data.Id);
+    //
+    //     if (submission == null)
+    //     {
+    //         throw new InvalidOperationException($"Submission {data.Id} not found");
+    //     }
+    //
+    //     submission.Status = "archived";
+    //     submission.UpdatedAt = data.UpdatedAt;
+    //
+    //     await _dbContext.SaveChangesAsync();
+    //
+    //     _logger.LogInformation("Submission {Id} archived", data.Id);
+    // }
+    //
     // Regular APIs
 
     public async Task<RestResponse> GetAllTemplates(CancellationToken ct = default)
@@ -296,45 +343,45 @@ public class DocuSealService
         return response;
     }
 
-    public async Task<(bool IsSuccessful, int? TemplateId, HttpStatusCode StatusCode, string? ErrorMessage)> CreateTemplate(PDFDocument document)
-    {
-        var client = new RestClient("https://api.docuseal.com/templates/pdf");
-        var request = new RestRequest("", Method.Post);
-        request.AddHeader("X-Auth-Token", _config.GetDocuSealAuthToken()!);
-        request.AddHeader("content-type", "application/json");
-        var payload = new
-        {
-            name = document.Name,
-            documents = new[]
-            {
-                new
-                {
-                    name = document.Name,
-                    file = document.File,
-                    fields = document.Inputs.Select(input => new
-                    {
-                        name = input?.Name,
-                        areas = input?.Areas?.Select(area => new
-                        {
-                            x = area.X,
-                            y = area.Y,
-                            w = area.W,
-                            h = area.H,
-                            page = area.Page
-                        }).ToArray()
-                    }).ToArray()
-                }
-            }
-        };
-        request.AddJsonBody(payload);
-        var response = await client.ExecuteAsync(request);
-        if (!response.IsSuccessful)
-        {
-            return (false, null, response.StatusCode, response.ErrorMessage);
-        }
-        var result = JsonSerializer.Deserialize<DocuSealTemplateResponse>(response.Content!);
-        return (true, result?.Id, response.StatusCode, null);
-    }
+    // public async Task<(bool IsSuccessful, int? TemplateId, HttpStatusCode StatusCode, string? ErrorMessage)> CreateTemplate(PDFDocument document)
+    // {
+    //     var client = new RestClient("https://api.docuseal.com/templates/pdf");
+    //     var request = new RestRequest("", Method.Post);
+    //     request.AddHeader("X-Auth-Token", _config.GetDocuSealAuthToken()!);
+    //     request.AddHeader("content-type", "application/json");
+    //     var payload = new
+    //     {
+    //         name = document.Name,
+    //         documents = new[]
+    //         {
+    //             new
+    //             {
+    //                 name = document.Name,
+    //                 file = document.File,
+    //                 fields = document.Inputs.Select(input => new
+    //                 {
+    //                     name = input?.Name,
+    //                     areas = input?.Areas?.Select(area => new
+    //                     {
+    //                         x = area.X,
+    //                         y = area.Y,
+    //                         w = area.W,
+    //                         h = area.H,
+    //                         page = area.Page
+    //                     }).ToArray()
+    //                 }).ToArray()
+    //             }
+    //         }
+    //     };
+    //     request.AddJsonBody(payload);
+    //     var response = await client.ExecuteAsync(request);
+    //     if (!response.IsSuccessful)
+    //     {
+    //         return (false, null, response.StatusCode, response.ErrorMessage);
+    //     }
+    //     var result = JsonSerializer.Deserialize<DocuSealTemplateResponse>(response.Content!);
+    //     return (true, result?.Id, response.StatusCode, null);
+    // }
 
     private static string Base64UrlEncode(byte[] data)
     {

@@ -2,8 +2,6 @@ using System.Security.Claims;
 using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using RentEZApi.Models.DTOs.DocuSeal;
 using RentEZApi.Models.DTOs.DocuSeal.Template;
 using RentEZApi.Services;
 
@@ -61,80 +59,31 @@ public class DocuSealController : ControllerBase
         }
     }
 
-    [HttpPost("template-webhook")]
-    // [ValidateDocuSealSignature]
-    public async Task<IActionResult> HandleTemplateWebhook([FromBody] DocuSealWebhookPayload payload)
+    [HttpPost("property/{propertyId}/template/{templateId}/save")]
+    [Authorize(AuthenticationSchemes = "Bearer", Policy = "UserOrAdmin")]
+    public IActionResult SaveTemplateData(Guid propertyId, Guid templateId, SaveTemplateDto payload)
     {
+        var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
         try
         {
-            await _docuSealService.TemplateWebhook(payload);
+            var result = _docuSealService.SaveDocuSealTemplate(propertyId, templateId, userId, payload);
             return Ok();
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogError(ex, "Invalid input");
+            return BadRequest(new
+            {
+                message = "Invalid input"
+            });
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex.Message);
+            _logger.LogError(ex, "Something went wrong");
             return StatusCode(500, new
             {
                 message = "Something went wrong"
             });
-        }
-    }
-
-    [HttpPost("submission-webhook")]
-    // [ValidateDocuSealSignature]
-    public async Task<IActionResult> HandleSubmissionWebhook([FromBody] DocuSealWebhookPayload payload)
-    {
-        _logger.LogInformation("Payload: {JsonPayload}", JsonSerializer.Serialize(payload));
-
-        var validEvents = new[] { "submission.created", "submission.completed", "submission.expired", "submission.archived" };
-        if (!validEvents.Contains(payload.EventType))
-        {
-            return BadRequest(new { message = "Invalid webhook event type" });
-        }
-
-        try
-        {
-            switch (payload.EventType)
-            {
-                case "submission.created":
-                    await _docuSealService.HandleSubmissionCreated(payload.Data);
-                    break;
-                case "submission.completed":
-                    await _docuSealService.HandleSubmissionCompleted(payload.Data);
-                    break;
-                case "submission.expired":
-                    await _docuSealService.HandleSubmissionExpired(payload.Data);
-                    break;
-                case "submission.archived":
-                    await _docuSealService.HandleSubmissionArchived(payload.Data);
-                    break;
-            }
-            return Ok(new { received = true });
-        }
-        catch (InvalidDataException ex)
-        {
-            _logger.LogError(ex, "Invalid data format");
-            return BadRequest(new { message = ex.Message });
-        }
-        catch (InvalidOperationException ex)
-        {
-            _logger.LogError(ex, "Operation failed");
-            return NotFound(new { message = ex.Message });
-        }
-        catch (HttpRequestException ex)
-        {
-            _logger.LogError(ex, "Failed to download document");
-            return StatusCode(502, new { message = "Failed to download document from DocuSeal" });
-        }
-        catch (DbUpdateException ex)
-        {
-            _logger.LogError(ex, "Database error");
-            return StatusCode(500, new { message = "Database operation failed" });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Unexpected error processing webhook");
-            return StatusCode(500, new { message = "Internal server error" });
         }
     }
 
@@ -177,6 +126,7 @@ public class DocuSealController : ControllerBase
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "Somewthing went wrong");
             var errorResponse = new
             {
                 message = "Internal server error",
@@ -222,27 +172,27 @@ public class DocuSealController : ControllerBase
         }
     }
 
-    [HttpPost("templates")]
-    [Authorize(AuthenticationSchemes = "Bearer", Policy = "UserOrAdmin")]
-    public async Task<ActionResult> CreateTemplate(PDFDocument document)
-    {
-        try
-        {
-            var result = await _docuSealService.CreateTemplate(document);
-            if (!result.IsSuccessful)
-            {
-                return StatusCode((int)result.StatusCode, result.ErrorMessage);
-            }
-            return CreatedAtAction(nameof(GetTemplateDetails), new { id = result.TemplateId }, result.TemplateId);
-        }
-        catch (Exception ex)
-        {
-            var errorResponse = new
-            {
-                message = "Internal server error",
-                error = _config.IsDevelopment() ? ex.ToString() : null
-            };
-            return StatusCode(500, errorResponse);
-        }
-    }
+    // [HttpPost("templates")]
+    // [Authorize(AuthenticationSchemes = "Bearer", Policy = "UserOrAdmin")]
+    // public async Task<ActionResult> CreateTemplate(PDFDocument document)
+    // {
+    //     try
+    //     {
+    //         var result = await _docuSealService.CreateTemplate(document);
+    //         if (!result.IsSuccessful)
+    //         {
+    //             return StatusCode((int)result.StatusCode, result.ErrorMessage);
+    //         }
+    //         return CreatedAtAction(nameof(GetTemplateDetails), new { id = result.TemplateId }, result.TemplateId);
+    //     }
+    //     catch (Exception ex)
+    //     {
+    //         var errorResponse = new
+    //         {
+    //             message = "Internal server error",
+    //             error = _config.IsDevelopment() ? ex.ToString() : null
+    //         };
+    //         return StatusCode(500, errorResponse);
+    //     }
+    // }
 }

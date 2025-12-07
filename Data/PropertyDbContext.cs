@@ -13,7 +13,7 @@ public class PropertyDbContext : IdentityDbContext<User, IdentityRole<Guid>, Gui
     {
     }
 
-    public DbSet<DocuSealPDFTemplate> DocuSealPDFTemplates { get; set; } = null!;
+    public DbSet<DocuSealTemplate> DocuSealPDFTemplates { get; set; } = null!;
     public DbSet<RefreshToken> RefreshTokens { get; set; } = null!;
     public DbSet<Property> PropertyListings { get; set; } = null!;
     public DbSet<PropertyApplication> PropertyApplications { get; set; } = null!;
@@ -58,7 +58,7 @@ public class PropertyDbContext : IdentityDbContext<User, IdentityRole<Guid>, Gui
             entity.HasIndex(e => new { e.OwnerId, e.Hash }).IsUnique();
         });
 
-        modelBuilder.Entity<DocuSealPDFTemplate>(entity =>
+        modelBuilder.Entity<DocuSealTemplate>(entity =>
         {
             entity.HasOne(d => d.Owner)
                 .WithMany(u => u.Templates)

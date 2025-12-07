@@ -224,7 +224,6 @@ public class UsersController : ControllerBase
     public async Task<IActionResult> SendRentPropertyRequest([FromQuery] string propertyId)
     {
         var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-        if (userId == null) return Unauthorized("Please login to proceed");
         _logger.LogInformation($"Web URL: {_configService.GetWebURL()}");
         try
         {

@@ -211,4 +211,18 @@ using (var scope = app.Services.CreateScope())
 
 app.MapGet("/health", () => new { message = "API is running" });
 
+app.Use(async (context, next) =>
+{
+    if (context.Request.Path.StartsWithSegments("/api/docuseal/submission-webhook"))
+    {
+        Console.WriteLine($"=== WEBHOOK HIT: {context.Request.Method} {context.Request.Path} ===");
+        context.Request.EnableBuffering();
+        using var reader = new StreamReader(context.Request.Body, leaveOpen: true);
+        var body = await reader.ReadToEndAsync();
+        context.Request.Body.Position = 0;
+        Console.WriteLine($"Body: {body}");
+    }
+    await next();
+});
+
 app.Run();

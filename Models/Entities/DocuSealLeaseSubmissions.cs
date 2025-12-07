@@ -16,6 +16,7 @@ public class DocuSealLeaseSubmission : IIdentifiable, ITimestampedEntity
     public string? Status { get; set; } = "pending";
     public string? FolderName { get; set; }
     public string? Role { get; set; } = string.Empty;
+    // public DocuSealValue[]? Values { get; set; }
 
     // TODO: Store in S3
     // Document (download via webhook)

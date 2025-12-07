@@ -3,24 +3,31 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace RentEZApi.Models.Entities;
 
-public class DocuSealPDFTemplate : IIdentifiable, ITimestampedEntity
+public class DocuSealTemplate : IIdentifiable, ITimestampedEntity
 {
     [Key]
-    public Guid Id { get; set; } = Guid.NewGuid();
+    public Guid Id { get; set; }
 
     [Required]
     [MaxLength(255)]
     public string TemplateId { get; set; } = string.Empty;
 
     [MaxLength(255)]
-    public string? Name { get; set; } = string.Empty;
+    public string? Name { get; set; }
 
     [MaxLength(255)]
-    public string? Slug { get; set; } = string.Empty;
+    public string Slug { get; set; } = string.Empty;
 
-    [Required]
+
     [Column(TypeName = "jsonb")]
-    public string DocumentJson { get; set; } = string.Empty;
+    public string? DocumentsJson { get; set; }
+
+    [Column(TypeName = "jsonb")]
+    public string? FieldsJson { get; set; }
+
+    [Column(TypeName = "jsonb")]
+    public string? SubmittersJson { get; set; }
+
 
     [Required]
     [ForeignKey(nameof(Owner))]
@@ -29,6 +36,7 @@ public class DocuSealPDFTemplate : IIdentifiable, ITimestampedEntity
 
     public Property? Property { get; set; }
 
+
     [Required]
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     public DateTime CreatedAt { get; set; }
@@ -36,7 +44,4 @@ public class DocuSealPDFTemplate : IIdentifiable, ITimestampedEntity
     [Required]
     public DateTime UpdatedAt { get; set; }
 
-    [Required]
-    [Column(TypeName = "jsonb")]
-    public string SubmittersJson { get; set; } = string.Empty;
 }

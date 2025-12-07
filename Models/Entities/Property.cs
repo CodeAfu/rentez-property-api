@@ -54,7 +54,7 @@ public class Property : IIdentifiable, ITimestampedEntity, IUnique
     public User Owner { get; set; } = null!;
 
     public Guid? AgreementId { get; set; }
-    public DocuSealPDFTemplate? Agreement { get; set; }
+    public DocuSealTemplate? Agreement { get; set; }
 
     // [ForeignKey(nameof(Tenant))]
     // public Guid TenantId { get; set; }
