@@ -20,7 +20,7 @@ public class PropertyService
 
     public async Task<PaginatedResult<PropertyListDto>> GetPaginatedAsync(PropertyFilterRequest filters)
     {
-        var query = _dbContext.Property
+        var query = _dbContext.PropertyListings
             .Include(p => p.Owner)
             .AsQueryable();
 
@@ -103,11 +103,11 @@ public class PropertyService
     }
 
     public async Task<Property?> Get(Guid id)
-        => await _dbContext.Property.FirstOrDefaultAsync(p => p.Id == id);
+        => await _dbContext.PropertyListings.FirstOrDefaultAsync(p => p.Id == id);
 
     public async Task<ICollection<PropertyDetails>> GetUserOwnedProperty(Guid userId)
     {
-        return await _dbContext.Property
+        return await _dbContext.PropertyListings
             .AsNoTracking()
             .Where(u => u.OwnerId == userId)
             .Select(p => new PropertyDetails
@@ -136,7 +136,7 @@ public class PropertyService
     public async Task<Property> CreateAsync(CreatePropertyDto dto, Guid ownerId)
     {
         var hash = Hasher.Hash(new { dto, ownerId });
-        var matchingHash = await _dbContext.Property
+        var matchingHash = await _dbContext.PropertyListings
             .FirstOrDefaultAsync(p => p.OwnerId == ownerId && p.Hash == hash);
 
         if (matchingHash != null)
@@ -163,7 +163,7 @@ public class PropertyService
             BillsIncluded = dto.BillsIncluded!,
         };
 
-        var result = _dbContext.Property.Add(property);
+        var result = _dbContext.PropertyListings.Add(property);
         await _dbContext.SaveChangesAsync();
 
         return property;
@@ -171,7 +171,7 @@ public class PropertyService
 
     public async Task<Property> Edit(Guid id, EditPropertyDto request)
     {
-        var property = await _dbContext.Property.FirstOrDefaultAsync(p => p.Id == id);
+        var property = await _dbContext.PropertyListings.FirstOrDefaultAsync(p => p.Id == id);
         if (property == null)
             throw new ObjectNotFoundException(id);
 

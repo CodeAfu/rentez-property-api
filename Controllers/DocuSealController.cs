@@ -83,10 +83,32 @@ public class DocuSealController : ControllerBase
     // [ValidateDocuSealSignature]
     public async Task<IActionResult> HandleSubmissionWebhook([FromBody] DocuSealWebhookPayload payload)
     {
+        _logger.LogInformation("Payload: {JsonPayload}", JsonSerializer.Serialize(payload));
+
+        var validEvents = new[] { "submission.created", "submission.completed", "submission.expired", "submission.archived" };
+        if (!validEvents.Contains(payload.EventType))
+        {
+            return BadRequest(new { message = "Invalid webhook event type" });
+        }
+
         try
         {
-            await _docuSealService.SubmissionWebhook(payload);
-            return Ok();
+            switch (payload.EventType)
+            {
+                case "submission.created":
+                    await _docuSealService.HandleSubmissionCreated(payload.Data);
+                    break;
+                case "submission.completed":
+                    await _docuSealService.HandleSubmissionCompleted(payload.Data);
+                    break;
+                case "submission.expired":
+                    await _docuSealService.HandleSubmissionExpired(payload.Data);
+                    break;
+                case "submission.archived":
+                    await _docuSealService.HandleSubmissionArchived(payload.Data);
+                    break;
+            }
+            return Ok(new { received = true });
         }
         catch (InvalidOperationException ex)
         {
@@ -174,7 +196,6 @@ public class DocuSealController : ControllerBase
                     message = "Empty string response from DocuSeal"
                 });
             }
-
             var template = JsonSerializer.Deserialize<JsonElement>(templateDetails.Content);
             var slug = template.GetProperty("slug").GetString();
             var url = $"https://docuseal.com/d/{slug}";
@@ -189,7 +210,6 @@ public class DocuSealController : ControllerBase
             };
             return StatusCode(500, errorResponse);
         }
-
     }
 
     [HttpPost("templates")]

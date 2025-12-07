@@ -48,7 +48,7 @@ public class DocuSealService
 
         if (!string.IsNullOrEmpty(templateId))
         {
-            var dbTemplateId = await _dbContext.Property
+            var dbTemplateId = await _dbContext.PropertyListings
                 .Where(p => p.Id == Guid.Parse(propertyId))
                 .Select(p => p.Agreement != null ? p.Agreement.TemplateId : null)
                 .FirstOrDefaultAsync();
@@ -122,7 +122,7 @@ public class DocuSealService
 
                 _dbContext.DocuSealPDFTemplates.Add(template);
             }
-            var property = await _dbContext.Property
+            var property = await _dbContext.PropertyListings
                 .FirstOrDefaultAsync(p => p.Id == propertyId);
 
             if (property != null)
@@ -145,21 +145,52 @@ public class DocuSealService
         }
     }
 
-    public async Task SubmissionWebhook(DocuSealWebhookPayload payload)
+    // Submission Webhooks
+
+    public async Task HandleSubmissionCreated(WebhookData data)
     {
-        _logger.LogInformation("Payload: {JsonPayload}", JsonSerializer.Serialize(payload));
-        if (
-            payload.EventType != "submission.created" ||
-            payload.EventType != "submission.completed" ||
-            payload.EventType != "submission.expired" ||
-            payload.EventType != "submission.archived"
-        ) throw new InvalidOperationException("Invalid webhook event from DocuSeal API");
+        _logger.LogInformation("Processing submission.created for ID: {Id}", data.Id);
 
-        if (payload.EventType == "submission.created")
+        var submission = new DocuSealLeaseSubmission
         {
+            SubmissionId = data.Id,
+            ExternalId = data.ExternalId,
+            FolderName = data.FolderName,
+            Status = "pending",
+            CreatedAt = data.CreatedAt,
+            UpdatedAt = data.UpdatedAt
+        };
 
+        _dbContext.DocuSealLeaseSubmissions.Add(submission);
+        await _dbContext.SaveChangesAsync();
+
+        // Send notification to submitters
+        foreach (var submitter in data.Submitters ?? Enumerable.Empty<SubmitterDto>())
+        {
+            _logger.LogInformation("Submission sent to: {Email}", submitter.Email);
         }
     }
+
+    public async Task HandleSubmissionCompleted(WebhookData data)
+    {
+        // Download signed documents from data.combined_document_url
+        // Update submission status
+        // Notify parties
+    }
+
+    public async Task HandleSubmissionExpired(WebhookData data)
+    {
+        // Mark as expired
+        // Send expiration notifications
+    }
+
+    public async Task HandleSubmissionArchived(WebhookData data)
+    {
+        // Archive submission
+        // Clean up resources
+    }
+
+    // Regular APIs
 
     public async Task<RestResponse> GetAllTemplates(CancellationToken ct = default)
     {

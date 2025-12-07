@@ -104,7 +104,7 @@ public class PropertyApplicationsService
 
     public async Task<List<PropertyApplicationResponse>> GetPropertyApplicationsAsync(Guid propertyId, Guid userId)
     {
-        var property = await _dbContext.Property
+        var property = await _dbContext.PropertyListings
             .FirstOrDefaultAsync(p => p.Id == propertyId);
 
         if (property == null)

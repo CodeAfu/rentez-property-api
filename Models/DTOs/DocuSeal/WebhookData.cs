@@ -1,6 +1,7 @@
 using System.Text.Json.Serialization;
+using RentEZApi.Models.DTOs.DocuSeal.Template;
 
-namespace RentEZApi.Models.DTOs.DocuSeal.Template;
+namespace RentEZApi.Models.DTOs.DocuSeal;
 
 public class WebhookData
 {

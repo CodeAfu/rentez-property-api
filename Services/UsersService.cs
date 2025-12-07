@@ -254,7 +254,7 @@ public class UsersService
             throw new ProfileNotFoundException("Please provide your Government ID number and Government ID type to proceed");
         }
 
-        var propertyExists = await _dbContext.Property
+        var propertyExists = await _dbContext.PropertyListings
             .AnyAsync(p => p.Id == propertyId);
 
         if (!propertyExists)

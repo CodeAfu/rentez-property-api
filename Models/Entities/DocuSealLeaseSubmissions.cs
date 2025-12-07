@@ -3,19 +3,19 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace RentEZApi.Models.Entities;
 
-public class DocuSealLeaseSubmissions : IIdentifiable, ITimestampedEntity
+[Table("DocuSealLeaseSubmissions")]
+public class DocuSealLeaseSubmission : IIdentifiable, ITimestampedEntity
 {
     [Key]
     public Guid Id { get; set; }
+    public long SubmissionId { get; set; }
 
     public string? Name { get; set; } = string.Empty;
     public string? Email { get; set; } = string.Empty;
     public string? ExternalId { get; set; } = string.Empty;
-    public string? Status { get; set; } = string.Empty;
+    public string? Status { get; set; } = "pending";
+    public string? FolderName { get; set; }
     public string? Role { get; set; } = string.Empty;
-    public string? OpenedAt { get; set; } = string.Empty;
-    public string? CompletedAt { get; set; } = string.Empty;
-    public string? DeclinedAt { get; set; } = string.Empty;
 
     // Foreign Key
     [Required]
@@ -24,6 +24,10 @@ public class DocuSealLeaseSubmissions : IIdentifiable, ITimestampedEntity
     public Property Property { get; set; } = null!;
 
     // Timestamp
+    public DateTime? OpenedAt { get; set; }
+    public DateTime? CompletedAt { get; set; }
+    public DateTime? DeclinedAt { get; set; }
+
     [Required]
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     public DateTime CreatedAt { get; set; }
