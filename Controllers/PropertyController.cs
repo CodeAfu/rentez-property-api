@@ -5,6 +5,7 @@ using RentEZApi.Services;
 using RentEZApi.Exceptions;
 using RentEZApi.Models.DTOs.Property;
 using RentEZApi.Attributes;
+using Microsoft.EntityFrameworkCore;
 
 namespace RentEZApi.Controllers;
 
@@ -167,34 +168,37 @@ public class PropertyController : ControllerBase
             _logger.LogInformation("Starting to delete the Property {id}", id);
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
-            if (userIdClaim == null) 
+            if (userIdClaim == null)
             {
                 return Unauthorized(new { message = "Unauthorized" });
             }
             var currentUserId = Guid.Parse(userIdClaim);
-         
+
             await _propertyService.Delete(id, currentUserId);
-            
+
             return Ok(new { message = "Property deleted successfully" });
         }
         catch (ObjectNotFoundException ex)
         {
-            return NotFound(new {error = ex.Message, message = "Property Not found"});
+            _logger.LogError(ex, "Object not found");
+            return NotFound(new { error = ex.Message, message = "Property Not found" });
         }
         catch (DbUpdateException ex)
         {
             _logger.LogError(ex, "Database error deleting property {PropertyId}", id);
-            return Conflict(new { 
-                message = "Cannot delete property due to existing related records" 
+            return Conflict(new
+            {
+                message = "Cannot delete property due to existing related records"
             });
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "Internal server error occurred {PropertyId}", id);
             return StatusCode(
                 StatusCodes.Status500InternalServerError,
-                new { error = ex.Message, message = unknownErrorMessage}
+                new { error = ex.Message, message = unknownErrorMessage }
             );
         }
-        
+
     }
 }

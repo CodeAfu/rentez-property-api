@@ -4,7 +4,6 @@ using RentEZApi.Models.Entities;
 using RentEZApi.Exceptions;
 using RentEZApi.Models.DTOs.Property;
 using RentEZApi.Models.DTOs.Result;
-using System.Diagnostics;
 
 namespace RentEZApi.Services;
 
@@ -224,40 +223,15 @@ public class PropertyService
 
         _logger.LogInformation("Attempting to delete property {PropertyId} by user {UserId}", id, currentUserId);
 
-        
         if (property == null)
             throw new ObjectNotFoundException(id);
 
         if (property.OwnerId != currentUserId)
             throw new UnauthorizedAccessException("You do not have permission to delete this property.");
 
-        var hasApplications = await _dbContext.PropertyApplications.AnyAsync(pa => pa.PropertyId == id);
-        _logger.LogInformation("Property {PropertyId} has applications: {HasApplications}", id, hasApplications);
-
-        
-        if (hasApplications)
-        {
-            throw new InvalidOperationException(
-                "Cannot delete property with existing applications. " +
-                "Please reject or process all applications first."
-            );
-        }
-
-        var hasLeases = await _dbContext.DocuSealLeaseSubmissions
-            .AnyAsync(lease => lease.PropertyId == id);
-        
-        if (hasLeases)
-        {
-            throw new InvalidOperationException(
-                "Cannot delete property with existing lease agreements."
-            );
-        }
-
         _dbContext.PropertyListings.Remove(property);
         await _dbContext.SaveChangesAsync();
 
-        
-        
         return property;
     }
 }

@@ -56,6 +56,24 @@ public class PropertyDbContext : IdentityDbContext<User, IdentityRole<Guid>, Gui
         {
             entity.HasIndex(e => e.OwnerId);
             entity.HasIndex(e => new { e.OwnerId, e.Hash }).IsUnique();
+
+            // Property -> PropertyApplications (one-to-many)
+            entity.HasMany<PropertyApplication>()
+                .WithOne(pa => pa.Property)
+                .HasForeignKey(pa => pa.PropertyId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Property -> DocuSealLeaseSubmissions (one-to-many)
+            entity.HasMany<DocuSealLeaseSubmission>()
+                .WithOne(pa => pa.Property)
+                .HasForeignKey(ls => ls.PropertyId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Property -> Agreement (one-to-one, nullable)
+            entity.HasOne(p => p.Agreement)
+                .WithOne()
+                .HasForeignKey<Property>(p => p.AgreementId)
+                .OnDelete(DeleteBehavior.SetNull);
         });
 
         modelBuilder.Entity<DocuSealTemplate>(entity =>

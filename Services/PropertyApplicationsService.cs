@@ -43,7 +43,8 @@ public class PropertyApplicationsService
         var application = new PropertyApplication
         {
             UserId = user.Id,
-            PropertyId = request.PropertyId
+            PropertyId = request.PropertyId,
+            UpdatedAt = DateTime.UtcNow,
         };
 
         _dbContext.PropertyApplications.Add(application);
