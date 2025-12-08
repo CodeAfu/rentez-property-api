@@ -32,7 +32,11 @@ builder.Services.AddCors(options =>
 });
 
 builder.Services.AddDbContext<PropertyDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"), npgsqlOptions =>
+    {
+        npgsqlOptions.CommandTimeout(180);
+        npgsqlOptions.EnableRetryOnFailure(5, TimeSpan.FromSeconds(10), null);
+    }));
 
 builder.Services.AddSingleton(jsonOptions);
 
@@ -76,8 +80,6 @@ builder.Services.AddControllers()
             JsonIgnoreCondition.WhenWritingNull;
         options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
     });
-
-builder.Services.AddDbContext<PropertyDbContext>();
 
 builder.Services.AddAuthentication(options =>
 {

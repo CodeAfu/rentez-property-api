@@ -82,14 +82,14 @@ public class DocuSealService
         }
     }
 
-    public async Task SaveDocuSealTemplate(Guid propertyId, Guid templateId, Guid userId, SaveTemplateDto dto)
+    public async Task SaveDocuSealTemplate(Guid propertyId, Guid templateId, Guid userId, TemplatePayloadDto dto)
     {
         var property = await _dbContext.PropertyListings
             .Include(p => p.Agreement)
             .FirstOrDefaultAsync(p => p.Id == propertyId);
 
         if (property == null)
-            throw new InvalidOperationException($"Property {propertyId} not found or not owned by user {userId}");
+            throw new InvalidOperationException($"Property {propertyId} not found");
 
         if (property.OwnerId != userId)
             throw new UnauthorizedAccessException($"User {userId} does not own property {propertyId}");
@@ -97,7 +97,7 @@ public class DocuSealService
         if (property.AgreementId.HasValue && property.AgreementId != templateId)
             throw new InvalidOperationException($"Property already linked to different template");
 
-        var agreement = await _dbContext.DocuSealPDFTemplates
+        var agreement = await _dbContext.DocuSealTemplates
             .FirstOrDefaultAsync(t => t.Id == templateId);
 
         if (agreement == null)
@@ -113,8 +113,7 @@ public class DocuSealService
                 OwnerId = userId,
                 UpdatedAt = DateTime.UtcNow
             };
-            _dbContext.DocuSealPDFTemplates.Add(agreement);
-
+            _dbContext.DocuSealTemplates.Add(agreement);
             property.AgreementId = agreement.Id;
         }
         else
@@ -130,6 +129,43 @@ public class DocuSealService
 
         await _dbContext.SaveChangesAsync();
     }
+
+    public async Task CreateDocuSealTemplate(Guid userId, Guid propertyId, TemplatePayloadDto dto)
+    {
+        var property = await _dbContext.PropertyListings
+            .Include(p => p.Agreement)
+            .FirstOrDefaultAsync(p => p.Id == propertyId);
+
+        if (property == null)
+            throw new InvalidOperationException($"Property {propertyId} not found");
+
+        if (property.OwnerId != userId)
+            throw new UnauthorizedAccessException($"User {userId} does not own property {propertyId}");
+
+        if (property.AgreementId.HasValue)
+            throw new InvalidOperationException($"Property ${propertyId} already has templateId {property.AgreementId}. Use the 'View Lease' page instead");
+
+        var agreement = new DocuSealTemplate
+        {
+            TemplateId = dto.TemplateId,
+            Name = dto.Name,
+            Slug = dto.Slug,
+            DocumentsJson = JsonSerializer.Serialize(dto.Documents),
+            SubmittersJson = JsonSerializer.Serialize(dto.Submitters),
+            FieldsJson = JsonSerializer.Serialize(dto.Fields),
+            OwnerId = userId,
+            UpdatedAt = DateTime.UtcNow
+        };
+
+        _dbContext.DocuSealTemplates.Add(agreement);
+        property.AgreementId = agreement.Id;
+
+        await _dbContext.SaveChangesAsync();
+    }
+
+    // public async Task SaveDocumentSubmission(Guid userId)
+    // {
+    // }
 
     // // Template Webhook
     // public async Task TemplateWebhook(DocuSealWebhookPayload payload)

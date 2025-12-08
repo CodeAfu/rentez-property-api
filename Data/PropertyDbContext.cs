@@ -13,7 +13,7 @@ public class PropertyDbContext : IdentityDbContext<User, IdentityRole<Guid>, Gui
     {
     }
 
-    public DbSet<DocuSealTemplate> DocuSealPDFTemplates { get; set; } = null!;
+    public DbSet<DocuSealTemplate> DocuSealTemplates { get; set; } = null!;
     public DbSet<RefreshToken> RefreshTokens { get; set; } = null!;
     public DbSet<Property> PropertyListings { get; set; } = null!;
     public DbSet<PropertyApplication> PropertyApplications { get; set; } = null!;

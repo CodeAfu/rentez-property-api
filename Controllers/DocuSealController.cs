@@ -2,7 +2,6 @@ using System.Security.Claims;
 using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using RentEZApi.Attributes;
 using RentEZApi.Models.DTOs.DocuSeal.Template;
 using RentEZApi.Services;
 
@@ -38,7 +37,7 @@ public class DocuSealController : ControllerBase
             });
         }
 
-        var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (string.IsNullOrEmpty(currentUserId))
             return Unauthorized(new
             {
@@ -60,14 +59,50 @@ public class DocuSealController : ControllerBase
         }
     }
 
-    [HttpPost("{propertyId}/{templateId}/save-lease")]
+    [HttpPost("save-lease")]
     [Authorize(AuthenticationSchemes = "Bearer", Policy = "UserOrAdmin")]
-    public IActionResult SaveTemplateData(Guid propertyId, Guid templateId, [FromBody] SaveTemplateDto payload)
+    public async Task<IActionResult> SaveTemplateData([FromQuery] Guid propertyId, [FromQuery] Guid templateId, [FromBody] TemplatePayloadDto payload)
     {
         var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
         try
         {
-            var result = _docuSealService.SaveDocuSealTemplate(propertyId, templateId, userId, payload);
+            await _docuSealService.SaveDocuSealTemplate(propertyId, templateId, userId, payload);
+            return Ok(new { message = "Template saved successfully" });
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogError(ex, "Invalid input");
+            return BadRequest(new
+            {
+                message = $"Invalid input: {ex.Message}"
+            });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.LogError(ex, "User Unauthorized");
+            return Unauthorized(new
+            {
+                message = "You are not authorized to do this action"
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Something went wrong");
+            return StatusCode(500, new
+            {
+                message = "Something went wrong"
+            });
+        }
+    }
+
+    [HttpPost("create-lease")]
+    [Authorize(AuthenticationSchemes = "Bearer", Policy = "UserOrAdmin")]
+    public async Task<IActionResult> SaveTemplateData([FromQuery] Guid propertyId, [FromBody] TemplatePayloadDto payload)
+    {
+        var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        try
+        {
+            await _docuSealService.CreateDocuSealTemplate(userId, propertyId, payload);
             return Ok();
         }
         catch (InvalidOperationException ex)
@@ -75,7 +110,7 @@ public class DocuSealController : ControllerBase
             _logger.LogError(ex, "Invalid input");
             return BadRequest(new
             {
-                message = "Invalid input"
+                message = $"Invalid input: {ex.Message}"
             });
         }
         catch (UnauthorizedAccessException ex)

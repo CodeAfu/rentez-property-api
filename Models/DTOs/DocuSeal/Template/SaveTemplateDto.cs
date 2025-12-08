@@ -5,7 +5,7 @@ using System.Text.Json.Serialization;
 
 namespace RentEZApi.Models.DTOs.DocuSeal.Template;
 
-public class SaveTemplateDto
+public class TemplatePayloadDto
 {
     [JsonPropertyName("id")]
     public long TemplateId { get; set; }
