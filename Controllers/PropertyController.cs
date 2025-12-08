@@ -157,4 +157,44 @@ public class PropertyController : ControllerBase
             );
         }
     }
+
+    [HttpDelete("{id}")]
+    [Authorize(AuthenticationSchemes = "Bearer", Policy = "UserOrAdmin")]
+    public async Task<ActionResult> DeleteProperty(Guid id)
+    {
+        try
+        {
+            _logger.LogInformation("Starting to delete the Property {id}", id);
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (userIdClaim == null) 
+            {
+                return Unauthorized(new { message = "Unauthorized" });
+            }
+            var currentUserId = Guid.Parse(userIdClaim);
+         
+            await _propertyService.Delete(id, currentUserId);
+            
+            return Ok(new { message = "Property deleted successfully" });
+        }
+        catch (ObjectNotFoundException ex)
+        {
+            return NotFound(new {error = ex.Message, message = "Property Not found"});
+        }
+        catch (DbUpdateException ex)
+        {
+            _logger.LogError(ex, "Database error deleting property {PropertyId}", id);
+            return Conflict(new { 
+                message = "Cannot delete property due to existing related records" 
+            });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(
+                StatusCodes.Status500InternalServerError,
+                new { error = ex.Message, message = unknownErrorMessage}
+            );
+        }
+        
+    }
 }
