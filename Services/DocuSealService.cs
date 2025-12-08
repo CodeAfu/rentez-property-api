@@ -130,7 +130,7 @@ public class DocuSealService
         await _dbContext.SaveChangesAsync();
     }
 
-    public async Task CreateDocuSealTemplate(Guid userId, Guid propertyId, TemplatePayloadDto dto)
+    public async Task<Guid> CreateDocuSealTemplate(Guid userId, Guid propertyId, TemplatePayloadDto dto)
     {
         var property = await _dbContext.PropertyListings
             .Include(p => p.Agreement)
@@ -161,6 +161,7 @@ public class DocuSealService
         property.AgreementId = agreement.Id;
 
         await _dbContext.SaveChangesAsync();
+        return agreement.Id;
     }
 
     // public async Task SaveDocumentSubmission(Guid userId)

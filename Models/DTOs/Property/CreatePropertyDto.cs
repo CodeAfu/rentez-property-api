@@ -10,7 +10,8 @@ public class CreatePropertyDto
     public string State { get; set; } = string.Empty;
     public decimal Rent { get; set; }
     public string[] Images { get; set; } = Array.Empty<string>();
-    public bool? DepositRequired { get; set; }
+    public decimal? Deposit { get; set; }
+    // public bool? DepositRequired { get; set; }
     public BillsIncluded? BillsIncluded { get; set; } = new();
     public Guid? LeaseAgreementId { get; set; }
 

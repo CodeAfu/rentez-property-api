@@ -102,8 +102,8 @@ public class DocuSealController : ControllerBase
         var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
         try
         {
-            await _docuSealService.CreateDocuSealTemplate(userId, propertyId, payload);
-            return Ok();
+            var templateId = await _docuSealService.CreateDocuSealTemplate(userId, propertyId, payload);
+            return Ok(new { message = "Property created successfully", templateId = templateId });
         }
         catch (InvalidOperationException ex)
         {

@@ -32,6 +32,8 @@ public class Property : IIdentifiable, ITimestampedEntity, IUnique
 
     public bool? DepositRequired { get; set; }
 
+    public decimal? Deposit { get; set; }
+
     public BillsIncluded BillsIncluded { get; set; } = new();
 
     // Preferences
@@ -39,9 +41,9 @@ public class Property : IIdentifiable, ITimestampedEntity, IUnique
     public string[] PreferredRaces { get; set; } = Array.Empty<string>();
     public string[] PreferredOccupation { get; set; } = Array.Empty<string>();
     public int? Income { get; set; }
-    public bool PetsAllowed { get; set; }
+    public bool? PetsAllowed { get; set; }
     public int MaxOccupants { get; set; }
-    public bool SmokingAllowed { get; set; }
+    public bool? SmokingAllowed { get; set; }
 
     public string[] LeaseTermCategory { get; set; } = Array.Empty<string>();
     public int? MinLeaseTerm { get; set; } // in months
