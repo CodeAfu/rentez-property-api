@@ -12,19 +12,21 @@ namespace RentEZApi.Controllers;
 public class DocuSealController : ControllerBase
 {
     private readonly DocuSealService _docuSealService;
+    private readonly PropertyService _propertyService;
     private readonly ConfigService _config;
     private readonly ILogger<DocuSealController> _logger;
 
-    public DocuSealController(DocuSealService docuSealService, ConfigService config, ILogger<DocuSealController> logger)
+    public DocuSealController(DocuSealService docuSealService, PropertyService propertyService, ConfigService config, ILogger<DocuSealController> logger)
     {
         _docuSealService = docuSealService;
+        _propertyService = propertyService;
         _config = config;
         _logger = logger;
     }
 
     [HttpPost("builder-token")]
     [Authorize(AuthenticationSchemes = "Bearer", Policy = "UserOrAdmin")]
-    public IActionResult GetBuilderToken([FromQuery] string propertyId, [FromQuery] string? templateId)
+    public async Task<IActionResult> GetBuilderToken([FromQuery] string propertyId, [FromQuery] string? templateId, [FromQuery] string? signerEmail)
     {
         // var adminEmail = _config.GetTestEmail();
         var adminEmail = _config.GetProdEmail();
@@ -46,8 +48,14 @@ public class DocuSealController : ControllerBase
 
         try
         {
-            var tokenString = _docuSealService.GetBuilderToken(adminEmail, currentUserId, propertyId, templateId);
-            return Ok(new { token = tokenString });
+            var tokenString = await _docuSealService.GetBuilderToken(adminEmail, currentUserId, propertyId, templateId);
+            var owner = await _propertyService.GetPropertyOwner(Guid.Parse(propertyId));
+            return Ok(new
+            {
+                token = tokenString,
+                signerEmail = signerEmail,
+                ownerName = owner != null ? (owner?.FirstName + " " + owner?.LastName).Trim() : null
+            });
         }
         catch (Exception ex)
         {
@@ -61,23 +69,20 @@ public class DocuSealController : ControllerBase
 
     [HttpPost("signer-token")]
     [Authorize(AuthenticationSchemes = "Bearer", Policy = "UserOrAdmin")]
-    public IActionResult GetSignerToken([FromQuery] string slug, [FromQuery] Guid? propertyId)
+    public async Task<IActionResult> GetSignerToken([FromQuery] string slug, [FromQuery] Guid? propertyId)
     {
         var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (string.IsNullOrEmpty(currentUserId))
-            return Unauthorized(new
-            {
-                message = "Please login to use this feature"
-            });
+            return Unauthorized(new { message = "Please login to use this feature" });
 
         try
         {
-            var tokenString = _docuSealService.GetSignerToken(currentUserId, propertyId);
+            var tokenString = await _docuSealService.GetSignerToken(slug, propertyId);
             return Ok(new { token = tokenString });
         }
         catch (InvalidOperationException ex)
         {
-            _logger.LogError(ex, "Invalid Operation");
+            _logger.LogError(ex, "Invalid operation");
             return BadRequest(new
             {
                 message = ex.Message
@@ -85,7 +90,7 @@ public class DocuSealController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex.Message);
+            _logger.LogError(ex, "Unexpected error occurred while getting signer token");
             return StatusCode(500, new
             {
                 message = "Something went wrong"
@@ -135,7 +140,7 @@ public class DocuSealController : ControllerBase
 
     [HttpPost("create-lease")]
     [Authorize(AuthenticationSchemes = "Bearer", Policy = "UserOrAdmin")]
-    public async Task<IActionResult> SaveTemplateData([FromQuery] Guid propertyId, [FromBody] TemplatePayloadDto payload)
+    public async Task<IActionResult> SaveTemplateData([FromQuery] Guid propertyId, [FromQuery] string? signerEmail, [FromBody] TemplatePayloadDto payload)
     {
         var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
         try
@@ -146,6 +151,7 @@ public class DocuSealController : ControllerBase
                 created = response.Created,
                 templateId = response.TemplateId,
                 message = response.Created ? "Template created successfully" : "Template already exists",
+                signerEmail = signerEmail,
             });
         }
         catch (InvalidOperationException ex)
@@ -258,6 +264,14 @@ public class DocuSealController : ControllerBase
             return StatusCode(500, errorResponse);
         }
     }
+
+    // [HttpPost("submissions")]
+    // [Authorize(AuthenticationSchemes = "Bearer", Policy = "UserOrAdmin")]
+    // public async Task<ActionResult> CreateSubmission()
+    // {
+    //
+    // }
+
 
     // [HttpPost("templates")]
     // [Authorize(AuthenticationSchemes = "Bearer", Policy = "UserOrAdmin")]

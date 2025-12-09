@@ -17,7 +17,7 @@ public class PropertyDbContext : IdentityDbContext<User, IdentityRole<Guid>, Gui
     public DbSet<RefreshToken> RefreshTokens { get; set; } = null!;
     public DbSet<Property> PropertyListings { get; set; } = null!;
     public DbSet<PropertyApplication> PropertyApplications { get; set; } = null!;
-    public DbSet<DocuSealLeaseSubmission> DocuSealLeaseSubmissions { get; set; } = null!;
+    public DbSet<DocuSealSubmissions> DocuSealSubmissions { get; set; } = null!;
 
     // protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     // {
@@ -69,7 +69,7 @@ public class PropertyDbContext : IdentityDbContext<User, IdentityRole<Guid>, Gui
                 .OnDelete(DeleteBehavior.Cascade);
 
             // Property -> DocuSealLeaseSubmissions (one-to-many)
-            entity.HasMany<DocuSealLeaseSubmission>()
+            entity.HasMany<DocuSealSubmissions>()
                 .WithOne(pa => pa.Property)
                 .HasForeignKey(ls => ls.PropertyId)
                 .OnDelete(DeleteBehavior.Cascade);
@@ -87,7 +87,7 @@ public class PropertyDbContext : IdentityDbContext<User, IdentityRole<Guid>, Gui
                 .WithMany(u => u.Templates)
                 .HasForeignKey(d => d.OwnerId)
                 .OnDelete(DeleteBehavior.Cascade);
-            entity.HasIndex(e => e.TemplateId).IsUnique();
+            entity.HasIndex(e => e.APITemplateId).IsUnique();
         });
 
         modelBuilder.Entity<RefreshToken>(entity =>
@@ -105,12 +105,11 @@ public class PropertyDbContext : IdentityDbContext<User, IdentityRole<Guid>, Gui
                 .IsUnique();
         });
 
-        modelBuilder.Entity<DocuSealLeaseSubmission>(entity =>
+        modelBuilder.Entity<DocuSealSubmissions>(entity =>
         {
-            entity.HasIndex(e => e.SubmissionId);
+            entity.HasIndex(e => e.APISubmissionId);
             entity.HasIndex(e => e.PropertyId);
             entity.HasIndex(e => e.Email);
-            entity.HasIndex(e => e.ExternalId);
         });
     }
 

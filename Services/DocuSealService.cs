@@ -29,7 +29,10 @@ public class DocuSealService
         _logger.LogInformation($"External ID: {userId}");
         _logger.LogInformation($"Property ID: {propertyId}");
         _logger.LogInformation($"Template ID: {templateId}");
-        var apiKey = _config.GetDocuSealAuthToken()!;
+
+        var apiKey = _config.GetDocuSealAuthToken()
+            ?? throw new InvalidOperationException("DocuSeal API key not configured");
+
         var secret = Encoding.UTF8.GetBytes(apiKey);
         var payload = new Dictionary<string, object>
         {
@@ -50,10 +53,8 @@ public class DocuSealService
         {
             var dbTemplateId = await _dbContext.PropertyListings
                 .Where(p => p.Id == Guid.Parse(propertyId))
-                .Select(p => p.Agreement != null ? p.Agreement.TemplateId : (long?)null)
+                .Select(p => p.Agreement != null ? p.Agreement.APITemplateId : (long?)null)
                 .FirstOrDefaultAsync();
-
-            _logger.LogInformation("Fetched Template ID: {Property}", dbTemplateId);
 
             if (dbTemplateId == null)
             {
@@ -82,13 +83,33 @@ public class DocuSealService
         }
     }
 
-
     public async Task<string> GetSignerToken(string slug, Guid? propertyId)
     {
+        _logger.LogInformation("Slug: {Slug}", slug);
+        _logger.LogInformation("Property ID: {PropertyId}", propertyId);
+
         if (propertyId == null)
             throw new InvalidOperationException("propertyId is set to null");
 
-        return "";
+        var apiKey = _config.GetDocuSealAuthToken()
+            ?? throw new InvalidOperationException("DocuSeal API key not configured");
+
+        var secret = Encoding.UTF8.GetBytes(apiKey);
+        var payload = new Dictionary<string, object>
+        {
+            { "slug", slug },
+            { "exp", DateTimeOffset.UtcNow.AddHours(1).ToUnixTimeSeconds() },
+        };
+
+        var header = Base64UrlEncode(Encoding.UTF8.GetBytes("{\"alg\":\"HS256\",\"typ\":\"JWT\"}"));
+        var payloadJson = Base64UrlEncode(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(payload)));
+        var headerPayload = $"{header}.{payloadJson}";
+
+        using var hmac = new HMACSHA256(secret);
+        var signatureBytes = hmac.ComputeHash(Encoding.UTF8.GetBytes(headerPayload));
+        var signature = Base64UrlEncode(signatureBytes);
+
+        return $"{headerPayload}.{signature}";
     }
 
     public async Task<SaveTemplateResponseDto> SaveDocuSealTemplate(Guid propertyId, Guid templateId, Guid userId, TemplatePayloadDto dto)
@@ -113,7 +134,7 @@ public class DocuSealService
         {
             agreement = new DocuSealTemplate
             {
-                TemplateId = dto.TemplateId,
+                APITemplateId = dto.TemplateId,
                 Name = dto.Name,
                 Slug = dto.Slug,
                 DocumentsJson = JsonSerializer.Serialize(dto.Documents),
@@ -127,7 +148,7 @@ public class DocuSealService
         }
         else
         {
-            agreement.TemplateId = dto.TemplateId;
+            agreement.APITemplateId = dto.TemplateId;
             agreement.Name = dto.Name;
             agreement.Slug = dto.Slug;
             agreement.DocumentsJson = JsonSerializer.Serialize(dto.Documents);
@@ -140,7 +161,7 @@ public class DocuSealService
 
         return new SaveTemplateResponseDto()
         {
-            TemplateId = agreement.TemplateId,
+            TemplateId = agreement.APITemplateId,
             OwnerId = agreement.OwnerId,
             Name = agreement.Name,
             Slug = agreement.Slug,
@@ -168,7 +189,7 @@ public class DocuSealService
 
         var agreement = new DocuSealTemplate
         {
-            TemplateId = dto.TemplateId,
+            APITemplateId = dto.TemplateId,
             Name = dto.Name,
             Slug = dto.Slug,
             DocumentsJson = JsonSerializer.Serialize(dto.Documents),

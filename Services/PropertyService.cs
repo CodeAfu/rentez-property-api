@@ -217,6 +217,14 @@ public class PropertyService
         return property;
     }
 
+    public async Task<User?> GetPropertyOwner(Guid propertyId)
+    {
+        return await _dbContext.PropertyListings
+            .Where(p => p.Id == propertyId)
+            .Select(p => p.Owner)
+            .FirstOrDefaultAsync();
+    }
+
     public async Task<Property> Delete(Guid id, Guid currentUserId)
     {
         var property = await _dbContext.PropertyListings.FindAsync(id);

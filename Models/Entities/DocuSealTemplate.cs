@@ -9,7 +9,7 @@ public class DocuSealTemplate : IIdentifiable, ITimestampedEntity
     public Guid Id { get; set; }
 
     [Required]
-    public long TemplateId { get; set; }
+    public long APITemplateId { get; set; }
 
     [MaxLength(255)]
     public string? Name { get; set; }
