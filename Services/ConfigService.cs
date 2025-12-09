@@ -1,6 +1,7 @@
 using RentEZApi.Models.DTOs.Auth;
 
 namespace RentEZApi.Services;
+
 public class ConfigService
 {
     private readonly IConfiguration _config;
@@ -11,13 +12,25 @@ public class ConfigService
     }
 
     public string? Get(string key) => _config[key];
+
     public string GetEnvironment() => _config["ASPNETCORE_ENVIRONMENT"] ?? "Production";
     public bool IsDevelopment() => _config["ASPNETCORE_ENVIRONMENT"] == "Development";
-    public string? GetDocuSealAuthToken() => _config["DocuSeal:AuthToken"];
-    public string? GetWebhookSecret() => _config["DocuSeal:WebhookSecret"];
+
+    public string GetDocuSealAuthToken() =>
+        _config["DocuSeal:AuthToken"] ?? throw new InvalidOperationException("DocuSeal API Key is missing");
+
+    public string GetWebhookSecret() =>
+        _config["DocuSeal:WebhookSecret"] ?? throw new InvalidOperationException("DocuSeal Webhook Secret is missing");
+
+    public string GetProdEmail() =>
+        _config["ProdEmail"] ?? throw new InvalidOperationException("Production Email is missing");
+
+    public string GetWebURL() =>
+        _config["WebURL"] ?? throw new InvalidOperationException("Web URL is missing");
+
+    // Optional: Returns string? (nullable)
     public string? GetTestEmail() => _config["TestEmail"];
-    public string? GetProdEmail() => _config["ProdEmail"];
-    public string? GetWebURL() => _config["WebURL"];
+
     public JwtInfo GetJwtInfo()
     {
         var tokenValidityMins = int.Parse(_config["Jwt:TokenValidityMins"]

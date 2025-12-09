@@ -77,7 +77,7 @@ public class DocuSealController : ControllerBase
 
         try
         {
-            var tokenString = await _docuSealService.GetSignerToken(slug, propertyId);
+            var tokenString = _docuSealService.GetSignerToken(slug, propertyId);
             return Ok(new { token = tokenString });
         }
         catch (InvalidOperationException ex)
@@ -265,12 +265,12 @@ public class DocuSealController : ControllerBase
         }
     }
 
-    // [HttpPost("submissions")]
-    // [Authorize(AuthenticationSchemes = "Bearer", Policy = "UserOrAdmin")]
-    // public async Task<ActionResult> CreateSubmission()
-    // {
-    //
-    // }
+    [HttpPost("submissions")]
+    [Authorize(AuthenticationSchemes = "Bearer", Policy = "UserOrAdmin")]
+    public async Task<ActionResult> CreateSubmission()
+    {
+        return Ok();
+    }
 
 
     // [HttpPost("templates")]

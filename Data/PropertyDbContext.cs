@@ -76,7 +76,7 @@ public class PropertyDbContext : IdentityDbContext<User, IdentityRole<Guid>, Gui
 
             // Property -> Agreement (one-to-one, nullable)
             entity.HasOne(p => p.Agreement)
-                .WithOne()
+                .WithOne(a => a.Property)
                 .HasForeignKey<Property>(p => p.AgreementId)
                 .OnDelete(DeleteBehavior.SetNull);
         });
