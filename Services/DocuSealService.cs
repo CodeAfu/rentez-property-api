@@ -82,6 +82,15 @@ public class DocuSealService
         }
     }
 
+
+    public async Task<string> GetSignerToken(string slug, Guid? propertyId)
+    {
+        if (propertyId == null)
+            throw new InvalidOperationException("propertyId is set to null");
+
+        return "";
+    }
+
     public async Task<SaveTemplateResponseDto> SaveDocuSealTemplate(Guid propertyId, Guid templateId, Guid userId, TemplatePayloadDto dto)
     {
         var property = await _dbContext.PropertyListings

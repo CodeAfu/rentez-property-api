@@ -61,9 +61,36 @@ public class DocuSealController : ControllerBase
 
     [HttpPost("signer-token")]
     [Authorize(AuthenticationSchemes = "Bearer", Policy = "UserOrAdmin")]
-    public IActionResult GetSignerToken([FromQuery] string signerToken, [FromQuery] string? templateId)
+    public IActionResult GetSignerToken([FromQuery] string slug, [FromQuery] Guid? propertyId)
     {
-        return Ok();
+        var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrEmpty(currentUserId))
+            return Unauthorized(new
+            {
+                message = "Please login to use this feature"
+            });
+
+        try
+        {
+            var tokenString = _docuSealService.GetSignerToken(currentUserId, propertyId);
+            return Ok(new { token = tokenString });
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogError(ex, "Invalid Operation");
+            return BadRequest(new
+            {
+                message = ex.Message
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex.Message);
+            return StatusCode(500, new
+            {
+                message = "Something went wrong"
+            });
+        }
     }
 
     [HttpPost("save-lease")]

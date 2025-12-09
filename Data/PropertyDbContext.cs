@@ -101,6 +101,8 @@ public class PropertyDbContext : IdentityDbContext<User, IdentityRole<Guid>, Gui
         {
             entity.HasIndex(e => e.PropertyId);
             entity.HasIndex(e => e.UserId);
+            entity.HasIndex(e => new { e.UserId, e.PropertyId })
+                .IsUnique();
         });
 
         modelBuilder.Entity<DocuSealLeaseSubmission>(entity =>
