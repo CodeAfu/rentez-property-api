@@ -82,7 +82,7 @@ public class DocuSealService
         }
     }
 
-    public async Task SaveDocuSealTemplate(Guid propertyId, Guid templateId, Guid userId, TemplatePayloadDto dto)
+    public async Task<SaveTemplateResponseDto> SaveDocuSealTemplate(Guid propertyId, Guid templateId, Guid userId, TemplatePayloadDto dto)
     {
         var property = await _dbContext.PropertyListings
             .Include(p => p.Agreement)
@@ -128,6 +128,14 @@ public class DocuSealService
         }
 
         await _dbContext.SaveChangesAsync();
+
+        return new SaveTemplateResponseDto()
+        {
+            TemplateId = agreement.TemplateId,
+            OwnerId = agreement.OwnerId,
+            Name = agreement.Name,
+            Slug = agreement.Slug,
+        };
     }
 
     public async Task<Guid> CreateDocuSealTemplate(Guid userId, Guid propertyId, TemplatePayloadDto dto)

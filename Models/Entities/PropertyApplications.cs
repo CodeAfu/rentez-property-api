@@ -10,6 +10,14 @@ public class PropertyApplication : IIdentifiable, ITimestampedEntity
     public Guid Id { get; set; }
 
     [Required]
+    public decimal RentAmount { get; set; }
+
+    public bool HasSignedLease { get; set; } = false;
+    public bool HasSentEmail { get; set; } = false;
+    public bool IsRenting { get; set; } = false;
+
+    // Foreign Keys
+    [Required]
     [ForeignKey(nameof(User))]
     public Guid UserId { get; set; }
     public User User { get; set; } = null!;

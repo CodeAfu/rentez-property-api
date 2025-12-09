@@ -59,6 +59,13 @@ public class DocuSealController : ControllerBase
         }
     }
 
+    [HttpPost("signer-token")]
+    [Authorize(AuthenticationSchemes = "Bearer", Policy = "UserOrAdmin")]
+    public IActionResult GetSignerToken([FromQuery] string signerToken, [FromQuery] string? templateId)
+    {
+        return Ok();
+    }
+
     [HttpPost("save-lease")]
     [Authorize(AuthenticationSchemes = "Bearer", Policy = "UserOrAdmin")]
     public async Task<IActionResult> SaveTemplateData([FromQuery] Guid propertyId, [FromQuery] Guid templateId, [FromBody] TemplatePayloadDto payload)
@@ -66,8 +73,12 @@ public class DocuSealController : ControllerBase
         var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
         try
         {
-            await _docuSealService.SaveDocuSealTemplate(propertyId, templateId, userId, payload);
-            return Ok(new { message = "Template saved successfully" });
+            var response = await _docuSealService.SaveDocuSealTemplate(propertyId, templateId, userId, payload);
+            return Ok(new
+            {
+                message = "Template saved successfully",
+                data = response,
+            });
         }
         catch (InvalidOperationException ex)
         {

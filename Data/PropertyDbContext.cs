@@ -50,6 +50,11 @@ public class PropertyDbContext : IdentityDbContext<User, IdentityRole<Guid>, Gui
                 .HasColumnType("text")
                 .IsRequired();
             entity.HasIndex(e => e.Email).IsUnique();
+
+            entity.HasMany<PropertyApplication>()
+                .WithOne(pa => pa.User)
+                .HasForeignKey(pa => pa.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<Property>(entity =>

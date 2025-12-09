@@ -14,7 +14,7 @@ public class TemplatePayloadDto
     public string Slug { get; set; } = string.Empty;
 
     [JsonPropertyName("name")]
-    public string? Name { get; set; }
+    public string Name { get; set; } = string.Empty;
 
     [JsonPropertyName("fields")]
     public List<DocuSealField> Fields { get; set; } = new();
