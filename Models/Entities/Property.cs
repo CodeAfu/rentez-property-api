@@ -58,6 +58,8 @@ public class Property : IIdentifiable, ITimestampedEntity, IUnique
     public Guid? AgreementId { get; set; }
     public DocuSealTemplate? Agreement { get; set; }
 
+    public ICollection<DocuSealSubmission> DocuSealSubmissions { get; set; } = new List<DocuSealSubmission>();
+
     // [ForeignKey(nameof(Tenant))]
     // public Guid TenantId { get; set; }
     // public User Tenant { get; set; } = null!;

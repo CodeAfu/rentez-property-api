@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace RentEZApi.Models.Entities;
 
-public class DocuSealSubmissions : IIdentifiable, ITimestampedEntity
+public class DocuSealSubmission : IIdentifiable, ITimestampedEntity
 {
     [Key]
     public Guid Id { get; set; }
@@ -13,7 +13,7 @@ public class DocuSealSubmissions : IIdentifiable, ITimestampedEntity
     public string? Email { get; set; }
     public string? Status { get; set; } = "sent";
     public string? Role { get; set; }
-    public string? Slug { get; set; } // IMPORTANT
+    public string? SignerSlug { get; set; } // IMPORTANT
 
     // TODO: Store in S3
     // Document (download via webhook)
@@ -25,6 +25,11 @@ public class DocuSealSubmissions : IIdentifiable, ITimestampedEntity
     [ForeignKey(nameof(Property))]
     public Guid PropertyId { get; set; }
     public Property Property { get; set; } = null!;
+
+    [Required]
+    [ForeignKey(nameof(Signer))]
+    public Guid SignerId { get; set; }
+    public User Signer { get; set; } = null!;
 
     // Timestamp
     public DateTime? OpenedAt { get; set; }

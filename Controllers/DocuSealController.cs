@@ -2,6 +2,7 @@ using System.Security.Claims;
 using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using RentEZApi.Models.DTOs.DocuSeal.Submission;
 using RentEZApi.Models.DTOs.DocuSeal.Template;
 using RentEZApi.Services;
 
@@ -256,6 +257,7 @@ public class DocuSealController : ControllerBase
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "Unknown error occurred");
             var errorResponse = new
             {
                 message = "Internal server error",
@@ -267,11 +269,35 @@ public class DocuSealController : ControllerBase
 
     [HttpPost("submissions")]
     [Authorize(AuthenticationSchemes = "Bearer", Policy = "UserOrAdmin")]
-    public async Task<ActionResult> CreateSubmission()
+    public async Task<ActionResult> CreateSubmission([FromBody] CreateSubmissionRequestDto dto)
     {
-        return Ok();
+        try
+        {
+            var result = await _docuSealService.CreateSubmission(dto);
+            return StatusCode(201, result);
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogError(ex, "Operation error");
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (HttpRequestException ex)
+        {
+            _logger.LogError(ex, "Error while fetching from DocuSeal API");
+            return StatusCode(StatusCodes.Status502BadGateway, new
+            {
+                message = "Unable to process lease agreement at this time. Please try again later.",
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unknown error occurred");
+            return StatusCode(500, new
+            {
+                message = "Unknown error occurred. See logs for more information"
+            });
+        }
     }
-
 
     // [HttpPost("templates")]
     // [Authorize(AuthenticationSchemes = "Bearer", Policy = "UserOrAdmin")]

@@ -17,7 +17,7 @@ public class PropertyDbContext : IdentityDbContext<User, IdentityRole<Guid>, Gui
     public DbSet<RefreshToken> RefreshTokens { get; set; } = null!;
     public DbSet<Property> PropertyListings { get; set; } = null!;
     public DbSet<PropertyApplication> PropertyApplications { get; set; } = null!;
-    public DbSet<DocuSealSubmissions> DocuSealSubmissions { get; set; } = null!;
+    public DbSet<DocuSealSubmission> DocuSealSubmissions { get; set; } = null!;
 
     // protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     // {
@@ -69,7 +69,7 @@ public class PropertyDbContext : IdentityDbContext<User, IdentityRole<Guid>, Gui
                 .OnDelete(DeleteBehavior.Cascade);
 
             // Property -> DocuSealLeaseSubmissions (one-to-many)
-            entity.HasMany<DocuSealSubmissions>()
+            entity.HasMany<DocuSealSubmission>()
                 .WithOne(pa => pa.Property)
                 .HasForeignKey(ls => ls.PropertyId)
                 .OnDelete(DeleteBehavior.Cascade);
@@ -105,11 +105,21 @@ public class PropertyDbContext : IdentityDbContext<User, IdentityRole<Guid>, Gui
                 .IsUnique();
         });
 
-        modelBuilder.Entity<DocuSealSubmissions>(entity =>
+        modelBuilder.Entity<DocuSealSubmission>(entity =>
         {
             entity.HasIndex(e => e.APISubmissionId);
             entity.HasIndex(e => e.PropertyId);
             entity.HasIndex(e => e.Email);
+
+            entity.HasOne(e => e.Signer)
+                .WithMany(u => u.DocuSealSubmissions)
+                .HasForeignKey(e => e.SignerId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.Property)
+                .WithMany(p => p.DocuSealSubmissions)
+                .HasForeignKey(e => e.PropertyId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
     }
 

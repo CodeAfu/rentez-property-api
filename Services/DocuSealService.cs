@@ -232,10 +232,17 @@ public class DocuSealService
         return response;
     }
 
-    public async Task<RestResponse> CreateSubmission(CreateSubmissionRequestDto dto, CancellationToken ct = default)
+    public async Task<DocuSealSubmissionResponse> CreateSubmission(CreateSubmissionRequestDto dto, CancellationToken ct = default)
     {
-        var client = new RestClient("https://api.docuseal.com/submissions");
-        var request = new RestRequest("", Method.Post);
+        var tenantUser = await _dbContext.Users
+            .FirstOrDefaultAsync(u => u.NormalizedEmail == dto.TenantEmail.ToUpper());
+
+        if (tenantUser == null)
+            throw new InvalidOperationException($"User not found for email: {dto.TenantEmail}");
+
+        var client = new RestClient("https://api.docuseal.com");
+        var request = new RestRequest("submissions", Method.Post);
+
         request.AddHeader("X-Auth-Token", _config.GetDocuSealAuthToken());
         request.AddHeader("content-type", "application/json");
 
@@ -249,15 +256,59 @@ public class DocuSealService
             {
                 new
                 {
-                    role = dto.Role ?? "First Party",
+                    role = dto.Role ?? "Tenant",
                     email = dto.TenantEmail
                 }
             }
         };
-        var response = client.Execute(request);
-        return response;
-    }
 
+        request.AddJsonBody(body);
+
+        var response = await client.ExecuteAsync<DocuSealSubmissionResponse>(request, ct);
+        if (!response.IsSuccessful)
+            throw new HttpRequestException(
+                    $"DocuSeal API Error ({response.StatusCode}): {response.Content}",
+                    null,
+                    response.StatusCode
+                );
+
+        var docuSealData = response.Data;
+        if (docuSealData == null)
+            throw new HttpRequestException(
+                    $"docuSealData is null",
+                    null,
+                    response.StatusCode
+                );
+
+        // Extract the specific signer info (we need the Slug)
+        var signerInfo = docuSealData.Submitters.FirstOrDefault(s => s.Email == dto.TenantEmail);
+
+
+        // 4. Save to Local Database (DocuSealSubmission Table)
+        var newSubmission = new DocuSealSubmission
+        {
+            APISubmissionId = docuSealData.Id,
+            PropertyId = dto.PropertyId,
+            SignerSlug = signerInfo?.Slug, // CRITICAL: Save this for the embedded view
+            Status = "SENT",
+            CreatedAt = DateTime.UtcNow
+        };
+
+        _dbContext.DocuSealSubmissions.Add(newSubmission);
+
+        var application = await _dbContext.PropertyApplications
+            .FirstOrDefaultAsync(pa => pa.PropertyId == dto.PropertyId && pa.UserId == tenantUser.Id, ct);
+
+        if (application != null)
+        {
+            application.HasSentEmail = true;
+        }
+
+
+        await _dbContext.SaveChangesAsync(ct);
+
+        return docuSealData;
+    }
 
     private static string Base64UrlEncode(byte[] data)
     {
