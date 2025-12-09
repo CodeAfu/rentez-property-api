@@ -1,5 +1,3 @@
-
-
 namespace RentEZApi.Models.DTOs.DocuSeal.Template;
 
 public class SaveTemplateResponseDto

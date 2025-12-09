@@ -11,6 +11,8 @@ public class PropertyApplication : IIdentifiable, ITimestampedEntity
 
     [Required]
     public decimal RentAmount { get; set; }
+    // [Required]
+    // public decimal RentPaid { get; set; }
 
     public bool HasSignedLease { get; set; } = false;
     public bool HasSentEmail { get; set; } = false;

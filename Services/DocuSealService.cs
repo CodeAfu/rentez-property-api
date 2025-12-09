@@ -138,7 +138,7 @@ public class DocuSealService
         };
     }
 
-    public async Task<Guid> CreateDocuSealTemplate(Guid userId, Guid propertyId, TemplatePayloadDto dto)
+    public async Task<CreateTemplateResponseDto> CreateDocuSealTemplate(Guid userId, Guid propertyId, TemplatePayloadDto dto)
     {
         var property = await _dbContext.PropertyListings
             .Include(p => p.Agreement)
@@ -151,7 +151,11 @@ public class DocuSealService
             throw new UnauthorizedAccessException($"User {userId} does not own property {propertyId}");
 
         if (property.AgreementId.HasValue)
-            throw new InvalidOperationException($"Property ${propertyId} already has templateId {property.AgreementId}. Use the 'View Lease' page instead");
+            return new CreateTemplateResponseDto()
+            {
+                Created = false,
+                TemplateId = property.AgreementId.Value,
+            };
 
         var agreement = new DocuSealTemplate
         {
@@ -169,7 +173,12 @@ public class DocuSealService
         property.AgreementId = agreement.Id;
 
         await _dbContext.SaveChangesAsync();
-        return agreement.Id;
+
+        return new CreateTemplateResponseDto()
+        {
+            Created = true,
+            TemplateId = agreement.Id,
+        };
     }
 
     // public async Task SaveDocumentSubmission(Guid userId)

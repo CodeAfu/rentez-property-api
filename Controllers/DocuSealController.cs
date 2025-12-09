@@ -113,8 +113,13 @@ public class DocuSealController : ControllerBase
         var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
         try
         {
-            var templateId = await _docuSealService.CreateDocuSealTemplate(userId, propertyId, payload);
-            return Ok(new { message = "Property created successfully", templateId = templateId });
+            var response = await _docuSealService.CreateDocuSealTemplate(userId, propertyId, payload);
+            return Ok(new
+            {
+                created = response.Created,
+                templateId = response.TemplateId,
+                message = response.Created ? "Template created successfully" : "Template already exists",
+            });
         }
         catch (InvalidOperationException ex)
         {

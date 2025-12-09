@@ -14,7 +14,6 @@ public class DocuSealLeaseSubmission : IIdentifiable, ITimestampedEntity
     public string? Email { get; set; }
     public string? ExternalId { get; set; }
     public string? Status { get; set; } = "sent";
-    public string? FolderName { get; set; }
     public string? Role { get; set; }
     public string? Slug { get; set; }
     // public DocuSealValue[]? Values { get; set; }
