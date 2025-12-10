@@ -259,7 +259,7 @@ public class DocuSealService
 
         var body = new
         {
-            template_id = property,
+            template_id = property.Agreement.APITemplateId,
             send_email = false,
             send_sms = false,
             order = dto.Order,
@@ -329,8 +329,8 @@ public class DocuSealService
 
             string emailSubject = "RentEZ Property: Lease Agreement Signing Invitation";
             string emailBody = $@"
-                <h3>Hi there,</h3>
-                <p>You have been invited to sign a lease document for property <strong>{propertyName}</strong> on RentEZ.</p>
+                <p>Hi there,</p></br>
+                <p>You have been invited to sign a lease document for property <strong>{propertyName}</strong> on RentEZ.</p></br>
                 <p>
                     <a href=""{signingLink}"" style=""padding: 10px 20px; background-color: #007bff; color: white; text-decoration: none; border-radius: 5px;"">
                         Review and Sign
@@ -346,8 +346,6 @@ public class DocuSealService
         }
         catch (Exception ex)
         {
-            // Don't crash the request if email fails, just log it. 
-            // The submission is already saved in DB.
             _logger.LogError(ex, "Submission created but failed to send invitation email to {Email}", dto.TenantEmail);
         }
 
@@ -369,5 +367,4 @@ public class DocuSealService
             ? result.ToUniversalTime()
             : null;
     }
-
 }

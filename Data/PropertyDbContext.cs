@@ -110,6 +110,9 @@ public class PropertyDbContext : IdentityDbContext<User, IdentityRole<Guid>, Gui
             entity.HasIndex(e => e.APISubmissionId);
             entity.HasIndex(e => e.PropertyId);
             entity.HasIndex(e => e.Email);
+            entity.HasIndex(e => e.SignerSlug);
+            entity.HasIndex(e => new { e.SignerId, e.PropertyId })
+                .IsUnique();
 
             entity.HasOne(e => e.Signer)
                 .WithMany(u => u.DocuSealSubmissions)

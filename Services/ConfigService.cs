@@ -31,10 +31,10 @@ public class ConfigService
     public string EmailFrom() =>
         _config["EmailService:From"] ?? throw new InvalidOperationException("Email From is missing");
 
-    public string GetSMTPPassword() =>
+    public string GetSmtpPassword() =>
         _config["EmailService:SmtpPassword"] ?? throw new InvalidOperationException("Email SMTP Password is missing");
 
-    public string GetSMTPHost() =>
+    public string GetSmtpHost() =>
         _config["EmailService:SmtpHost"] ?? throw new InvalidOperationException("Email SMTP Host is missing");
 
     public string GetSmtpPort() =>
