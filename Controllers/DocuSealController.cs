@@ -14,13 +14,21 @@ public class DocuSealController : ControllerBase
 {
     private readonly DocuSealService _docuSealService;
     private readonly PropertyService _propertyService;
+    private readonly DocuSealSubmissionsService _docuSealSubmissionsService;
     private readonly ConfigService _config;
     private readonly ILogger<DocuSealController> _logger;
 
-    public DocuSealController(DocuSealService docuSealService, PropertyService propertyService, ConfigService config, ILogger<DocuSealController> logger)
+    public DocuSealController(
+            DocuSealService docuSealService,
+            PropertyService propertyService,
+            DocuSealSubmissionsService docuSealSubmissionsService,
+            ConfigService config,
+            ILogger<DocuSealController> logger
+    )
     {
         _docuSealService = docuSealService;
         _propertyService = propertyService;
+        _docuSealSubmissionsService = docuSealSubmissionsService;
         _config = config;
         _logger = logger;
     }
@@ -273,8 +281,40 @@ public class DocuSealController : ControllerBase
     {
         try
         {
-            var result = await _docuSealService.CreateSubmission(dto);
+            var result = await _docuSealSubmissionsService.CreateSubmission(dto);
             return StatusCode(201, result);
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogError(ex, "Operation error");
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (HttpRequestException ex)
+        {
+            _logger.LogError(ex, "Error while fetching from DocuSeal API");
+            return StatusCode(StatusCodes.Status502BadGateway, new
+            {
+                message = "Unable to process lease agreement at this time. Please try again later.",
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unknown error occurred");
+            return StatusCode(500, new
+            {
+                message = "Unknown error occurred. See logs for more information"
+            });
+        }
+    }
+
+    [HttpGet("submissions")]
+    [Authorize(AuthenticationSchemes = "Bearer", Policy = "UserOrAdmin")]
+    public async Task<ActionResult> GetSubmissionsByTemplateId([FromQuery] string propertyId)
+    {
+        try
+        {
+            var result = await _docuSealSubmissionsService.GetSubmissionsByPropertyId(propertyId);
+            return Ok(result);
         }
         catch (InvalidOperationException ex)
         {
