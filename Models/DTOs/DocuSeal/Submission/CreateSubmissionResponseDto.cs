@@ -15,5 +15,5 @@ public class DocuSealSubmissionResponse
     public string? Slug { get; set; } // The submission-level slug
 
     [JsonPropertyName("submitters")]
-    public List<SubmitterResponse> Submitters { get; set; } = new();
+    public List<SubmitterResponseDto> Submitters { get; set; } = new();
 }

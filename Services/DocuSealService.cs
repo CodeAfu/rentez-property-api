@@ -4,6 +4,7 @@ using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using RentEZApi.Data;
 using RentEZApi.Models.DTOs.DocuSeal.Submission;
+using RentEZApi.Models.DTOs.DocuSeal.Submitter;
 using RentEZApi.Models.DTOs.DocuSeal.Template;
 using RentEZApi.Models.Entities;
 using RestSharp;
@@ -13,13 +14,15 @@ namespace RentEZApi.Services;
 public class DocuSealService
 {
     private readonly PropertyDbContext _dbContext;
+    private readonly EmailService _emailService;
     private readonly ConfigService _config;
     private readonly ILogger<DocuSealService> _logger;
     private readonly HttpClient _httpClient;
 
-    public DocuSealService(PropertyDbContext dbContext, ConfigService config, ILogger<DocuSealService> logger, IHttpClientFactory httpClientFactory)
+    public DocuSealService(PropertyDbContext dbContext, EmailService emailService, ConfigService config, ILogger<DocuSealService> logger, IHttpClientFactory httpClientFactory)
     {
         _dbContext = dbContext;
+        _emailService = emailService;
         _config = config;
         _logger = logger;
         _httpClient = httpClientFactory.CreateClient();
@@ -232,13 +235,21 @@ public class DocuSealService
         return response;
     }
 
-    public async Task<DocuSealSubmissionResponse> CreateSubmission(CreateSubmissionRequestDto dto, CancellationToken ct = default)
+    public async Task<DocuSealSubmitterResponseDto> CreateSubmission(CreateSubmissionRequestDto dto, CancellationToken ct = default)
     {
         var tenantUser = await _dbContext.Users
             .FirstOrDefaultAsync(u => u.NormalizedEmail == dto.TenantEmail.ToUpper());
 
         if (tenantUser == null)
             throw new InvalidOperationException($"User not found for email: {dto.TenantEmail}");
+
+        var property = await _dbContext.PropertyListings
+            .Include(p => p.Agreement)
+            .Include(p => p.Owner)
+            .FirstOrDefaultAsync(p => p.Id == dto.PropertyId);
+
+        if (property?.Agreement == null)
+            throw new InvalidOperationException($"Could not fetch TemplateId value for property {dto.PropertyId}. Agreement is possibly not assigned");
 
         var client = new RestClient("https://api.docuseal.com");
         var request = new RestRequest("submissions", Method.Post);
@@ -248,9 +259,9 @@ public class DocuSealService
 
         var body = new
         {
-            template_id = dto.TemplateId,
-            send_email = dto.SendEmail,
-            send_sms = dto.SendSMS,
+            template_id = property,
+            send_email = false,
+            send_sms = false,
             order = dto.Order,
             submitters = new[]
             {
@@ -264,7 +275,7 @@ public class DocuSealService
 
         request.AddJsonBody(body);
 
-        var response = await client.ExecuteAsync<DocuSealSubmissionResponse>(request, ct);
+        var response = await client.ExecuteAsync(request, ct);
         if (!response.IsSuccessful)
             throw new HttpRequestException(
                     $"DocuSeal API Error ({response.StatusCode}): {response.Content}",
@@ -272,26 +283,28 @@ public class DocuSealService
                     response.StatusCode
                 );
 
-        var docuSealData = response.Data;
-        if (docuSealData == null)
-            throw new HttpRequestException(
-                    $"docuSealData is null",
-                    null,
-                    response.StatusCode
-                );
+        if (response.Content == null)
+            throw new HttpRequestException("No content returned from DocuSeal API");
 
-        // Extract the specific signer info (we need the Slug)
-        var signerInfo = docuSealData.Submitters.FirstOrDefault(s => s.Email == dto.TenantEmail);
+        _logger.LogInformation("DocuSeal Rest API Response: {Content}", response.Content);
 
+        var submitters = JsonSerializer.Deserialize<List<DocuSealSubmitterResponseDto>>(response.Content);
+        if (submitters == null)
+            throw new HttpRequestException("No submitters returned from DocuSeal API");
 
-        // 4. Save to Local Database (DocuSealSubmission Table)
+        var firstSubmitter = submitters[0];
+
         var newSubmission = new DocuSealSubmission
         {
-            APISubmissionId = docuSealData.Id,
             PropertyId = dto.PropertyId,
-            SignerSlug = signerInfo?.Slug, // CRITICAL: Save this for the embedded view
-            Status = "SENT",
-            CreatedAt = DateTime.UtcNow
+            SignerId = tenantUser.Id,
+            APISubmissionId = firstSubmitter.Id,
+            Email = firstSubmitter.Email,
+            Role = firstSubmitter.Role,
+            SignerSlug = firstSubmitter.Slug, // CRITICAL: Save this for the embedded view
+            Status = firstSubmitter.Status,
+            UpdatedAt = DateTime.UtcNow,
+            CreatedAt = DateTime.UtcNow,
         };
 
         _dbContext.DocuSealSubmissions.Add(newSubmission);
@@ -304,10 +317,41 @@ public class DocuSealService
             application.HasSentEmail = true;
         }
 
-
         await _dbContext.SaveChangesAsync(ct);
 
-        return docuSealData;
+        try
+        {
+            string frontendBaseUrl = _config.GetWebURL();
+            string signingLink = $"{frontendBaseUrl}/lease-submission/{firstSubmitter.Slug}?propertyId={dto.PropertyId}";
+
+            string sender = (property.Owner.FirstName + " " + property.Owner.LastName).Trim();
+            string propertyName = property.Title;
+
+            string emailSubject = "RentEZ Property: Lease Agreement Signing Invitation";
+            string emailBody = $@"
+                <h3>Hi there,</h3>
+                <p>You have been invited to sign a lease document for property <strong>{propertyName}</strong> on RentEZ.</p>
+                <p>
+                    <a href=""{signingLink}"" style=""padding: 10px 20px; background-color: #007bff; color: white; text-decoration: none; border-radius: 5px;"">
+                        Review and Sign
+                    </a>
+                </p>
+                <p>Or click here: <a href=""{signingLink}"">{signingLink}</a></p>
+                <p>Please contact us by replying to this email if you have any questions.</p>
+                <br/>
+                <p>Thanks,<br/>{(string.IsNullOrEmpty(sender) ? "RentEZ" : sender)}</p>
+            ";
+
+            await _emailService.SendEmail(dto.TenantEmail, emailSubject, emailBody);
+        }
+        catch (Exception ex)
+        {
+            // Don't crash the request if email fails, just log it. 
+            // The submission is already saved in DB.
+            _logger.LogError(ex, "Submission created but failed to send invitation email to {Email}", dto.TenantEmail);
+        }
+
+        return firstSubmitter;
     }
 
     private static string Base64UrlEncode(byte[] data)

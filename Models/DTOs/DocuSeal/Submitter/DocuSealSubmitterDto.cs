@@ -2,13 +2,10 @@ using System.Text.Json.Serialization;
 
 namespace RentEZApi.Models.DTOs.DocuSeal.Submitter;
 
-public class SubmitterResponseDto
+public class DocuSealSubmitterResponseDto
 {
     [JsonPropertyName("id")]
     public long Id { get; set; }
-
-    [JsonPropertyName("submission_id")]
-    public long SubmissionId { get; set; }
 
     [JsonPropertyName("name")]
     public string? Name { get; set; }
@@ -20,17 +17,17 @@ public class SubmitterResponseDto
     public string? Email { get; set; }
 
     [JsonPropertyName("slug")]
-    public string? Slug { get; set; } // The signer-specific slug (Use this for embedding)
-
-    [JsonPropertyName("status")]
-    public string? Status { get; set; }
+    public string? Slug { get; set; } // IMPORTANT
 
     [JsonPropertyName("role")]
     public string? Role { get; set; }
 
-    [JsonPropertyName("opened_at")]
-    public DateTime? OpenedAt { get; set; }
+    [JsonPropertyName("status")]
+    public string? Status { get; set; }
 
-    [JsonPropertyName("completed_at")]
-    public DateTime? CompletedAt { get; set; }
+    [JsonPropertyName("created_at")]
+    public string? CreatedAt { get; set; }
+
+    [JsonPropertyName("updated_at")]
+    public string? UpdatedAt { get; set; }
 }

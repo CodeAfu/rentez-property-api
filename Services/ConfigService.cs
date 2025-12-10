@@ -28,6 +28,18 @@ public class ConfigService
     public string GetWebURL() =>
         _config["WebURL"] ?? throw new InvalidOperationException("Web URL is missing");
 
+    public string EmailFrom() =>
+        _config["EmailService:From"] ?? throw new InvalidOperationException("Email From is missing");
+
+    public string GetSMTPPassword() =>
+        _config["EmailService:SmtpPassword"] ?? throw new InvalidOperationException("Email SMTP Password is missing");
+
+    public string GetSMTPHost() =>
+        _config["EmailService:SmtpHost"] ?? throw new InvalidOperationException("Email SMTP Host is missing");
+
+    public string GetSmtpPort() =>
+        _config["EmailService:SmtpPort"] ?? throw new InvalidOperationException("Email SMTP Port is missing");
+
     // Optional: Returns string? (nullable)
     public string? GetTestEmail() => _config["TestEmail"];
 

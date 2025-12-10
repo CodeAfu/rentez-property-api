@@ -20,7 +20,7 @@ public class TemplatePayloadDto
     public List<DocuSealField> Fields { get; set; } = new();
 
     [JsonPropertyName("submitters")]
-    public List<DocuSealSubmitter> Submitters { get; set; } = new();
+    public List<DocuSealTemplateSubmitter> Submitters { get; set; } = new();
 
     [JsonPropertyName("documents")]
     public List<DocuSealDocument> Documents { get; set; } = new();

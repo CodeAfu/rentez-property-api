@@ -9,7 +9,6 @@ public class DocuSealSubmission : IIdentifiable, ITimestampedEntity
     public Guid Id { get; set; }
     public long APISubmissionId { get; set; }
 
-    public string? Name { get; set; }
     public string? Email { get; set; }
     public string? Status { get; set; } = "sent";
     public string? Role { get; set; }
