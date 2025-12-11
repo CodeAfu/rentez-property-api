@@ -344,7 +344,7 @@ public class DocuSealController : ControllerBase
         }
     }
 
-    [HttpGet("submissions/sign-lease")]
+    [HttpPost("submissions/sign-lease")]
     [Authorize(AuthenticationSchemes = "Bearer", Policy = "UserOrAdmin")]
     public async Task<ActionResult> SignLease([FromQuery] string signerEmail, [FromQuery] Guid propertyId, [FromBody] DocuSealLeaseSubmissionRequestDto payload)
     {

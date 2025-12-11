@@ -5,10 +5,10 @@ namespace RentEZApi.Models.DTOs.DocuSeal.Submission;
 public class DocuSealLeaseSubmissionRequestDto
 {
     [JsonPropertyName("submission_url")]
-    public string SubmissionUrl { get; set; } = string.Empty;
+    public required string SubmissionUrl { get; set; }
 
     [JsonPropertyName("status")]
-    public string Status { get; set; } = string.Empty;
+    public required string Status { get; set; }
 
     [JsonPropertyName("opened_at")]
     public DateTime OpenedAt { get; set; }

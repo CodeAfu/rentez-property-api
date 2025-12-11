@@ -206,7 +206,7 @@ public class DocuSealSubmissionsService
         submission.CompletedAt = payload.CompletedAt;
         submission.SubmissionUrl = payload.SubmissionUrl;
 
-        application.IsRenting = true;
+        application.HasSignedLease = true;
         application.UpdatedAt = DateTime.UtcNow;
 
         await _dbContext.SaveChangesAsync();
