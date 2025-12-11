@@ -13,6 +13,7 @@ public class DocuSealSubmission : IIdentifiable, ITimestampedEntity
     public string? Status { get; set; } = "sent";
     public string? Role { get; set; }
     public string? SignerSlug { get; set; } // IMPORTANT
+    public string? SubmissionUrl { get; set; }
 
     // TODO: Store in S3
     // Document (download via webhook)
@@ -29,6 +30,12 @@ public class DocuSealSubmission : IIdentifiable, ITimestampedEntity
     [ForeignKey(nameof(Signer))]
     public Guid SignerId { get; set; }
     public User Signer { get; set; } = null!;
+
+    [Required]
+    [ForeignKey(nameof(PropertyApplication))]
+    public Guid PropertyApplicationId { get; set; }
+
+    public PropertyApplication? PropertyApplication { get; set; }
 
     // Timestamp
     public DateTime? OpenedAt { get; set; }

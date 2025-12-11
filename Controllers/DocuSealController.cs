@@ -344,6 +344,44 @@ public class DocuSealController : ControllerBase
         }
     }
 
+    [HttpGet("submissions/sign-lease")]
+    [Authorize(AuthenticationSchemes = "Bearer", Policy = "UserOrAdmin")]
+    public async Task<ActionResult> SignLease([FromQuery] string signerEmail, [FromQuery] Guid propertyId, [FromBody] DocuSealLeaseSubmissionRequestDto payload)
+    {
+        try
+        {
+            await _docuSealSubmissionsService.SignLease(signerEmail, propertyId, payload);
+            return Ok(new
+            {
+                message = "Lease signed successfully",
+            });
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogError(ex, "Invalid input");
+            return BadRequest(new
+            {
+                message = $"Invalid input: {ex.Message}"
+            });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.LogError(ex, "User Unauthorized");
+            return Unauthorized(new
+            {
+                message = "You are not authorized to do this action"
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Something went wrong");
+            return StatusCode(500, new
+            {
+                message = "Something went wrong"
+            });
+        }
+    }
+
     // [HttpPost("templates")]
     // [Authorize(AuthenticationSchemes = "Bearer", Policy = "UserOrAdmin")]
     // public async Task<ActionResult> CreateTemplate(PDFDocument document)

@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using RentEZApi.Data;
@@ -11,9 +12,11 @@ using RentEZApi.Data;
 namespace RentEZApi.Migrations
 {
     [DbContext(typeof(PropertyDbContext))]
-    partial class PropertyDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251211082718_AddSubmissionUrl")]
+    partial class AddSubmissionUrl
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -184,9 +187,6 @@ namespace RentEZApi.Migrations
                     b.Property<DateTime?>("OpenedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid>("PropertyApplicationId")
-                        .HasColumnType("uuid");
-
                     b.Property<Guid>("PropertyId")
                         .HasColumnType("uuid");
 
@@ -213,9 +213,6 @@ namespace RentEZApi.Migrations
                     b.HasIndex("APISubmissionId");
 
                     b.HasIndex("Email");
-
-                    b.HasIndex("PropertyApplicationId")
-                        .IsUnique();
 
                     b.HasIndex("PropertyId");
 
@@ -639,12 +636,6 @@ namespace RentEZApi.Migrations
 
             modelBuilder.Entity("RentEZApi.Models.Entities.DocuSealSubmission", b =>
                 {
-                    b.HasOne("RentEZApi.Models.Entities.PropertyApplication", "PropertyApplication")
-                        .WithOne("DocuSealSubmission")
-                        .HasForeignKey("RentEZApi.Models.Entities.DocuSealSubmission", "PropertyApplicationId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("RentEZApi.Models.Entities.Property", "Property")
                         .WithMany("DocuSealSubmissions")
                         .HasForeignKey("PropertyId")
@@ -658,8 +649,6 @@ namespace RentEZApi.Migrations
                         .IsRequired();
 
                     b.Navigation("Property");
-
-                    b.Navigation("PropertyApplication");
 
                     b.Navigation("Signer");
                 });
@@ -759,11 +748,6 @@ namespace RentEZApi.Migrations
             modelBuilder.Entity("RentEZApi.Models.Entities.Property", b =>
                 {
                     b.Navigation("DocuSealSubmissions");
-                });
-
-            modelBuilder.Entity("RentEZApi.Models.Entities.PropertyApplication", b =>
-                {
-                    b.Navigation("DocuSealSubmission");
                 });
 
             modelBuilder.Entity("RentEZApi.Models.Entities.User", b =>

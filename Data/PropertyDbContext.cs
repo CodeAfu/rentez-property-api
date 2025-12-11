@@ -103,6 +103,11 @@ public class PropertyDbContext : IdentityDbContext<User, IdentityRole<Guid>, Gui
             entity.HasIndex(e => e.UserId);
             entity.HasIndex(e => new { e.UserId, e.PropertyId })
                 .IsUnique();
+
+            entity.HasOne(e => e.DocuSealSubmission)
+                .WithOne(s => s.PropertyApplication)
+                .HasForeignKey<DocuSealSubmission>(e => e.PropertyApplicationId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<DocuSealSubmission>(entity =>

@@ -29,6 +29,8 @@ public class PropertyApplication : IIdentifiable, ITimestampedEntity
     public Guid PropertyId { get; set; }
     public Property Property { get; set; } = null!;
 
+    public DocuSealSubmission? DocuSealSubmission { get; set; }
+
     // Timestamp
     [Required]
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]

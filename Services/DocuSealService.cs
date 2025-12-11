@@ -3,8 +3,6 @@ using System.Text;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using RentEZApi.Data;
-using RentEZApi.Models.DTOs.DocuSeal.Submission;
-using RentEZApi.Models.DTOs.DocuSeal.Submitter;
 using RentEZApi.Models.DTOs.DocuSeal.Template;
 using RentEZApi.Models.Entities;
 using RestSharp;

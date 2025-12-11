@@ -53,7 +53,10 @@ public class DocuSealSubmissionsService
         var application = await _dbContext.PropertyApplications
                 .FirstOrDefaultAsync(pa => pa.PropertyId == dto.PropertyId && pa.UserId == tenantUser.Id, ct);
 
-        if (application != null && application.HasSentEmail == true)
+        if (application == null)
+            throw new InvalidOperationException($"Could not find application for {dto.TenantEmail} and {dto.PropertyId}");
+
+        if (application.HasSentEmail == true)
             throw new InvalidOperationException($"You have already sent an invitation email to {dto.TenantEmail}");
 
         // Create a new submission with docuseal api
@@ -102,6 +105,7 @@ public class DocuSealSubmissionsService
         {
             PropertyId = dto.PropertyId,
             SignerId = tenantUser.Id,
+            PropertyApplicationId = application.Id,
             APISubmissionId = firstSubmitter.Id,
             Email = firstSubmitter.Email,
             Role = firstSubmitter.Role,
@@ -177,4 +181,37 @@ public class DocuSealSubmissionsService
                 .ToListAsync(ct);
     }
 
+    public async Task SignLease(string signerEmail, Guid propertyId, DocuSealLeaseSubmissionRequestDto payload)
+    {
+        // Check if the submission exists
+        var submission = await _dbContext.DocuSealSubmissions
+                .FirstOrDefaultAsync(s => s.Email == signerEmail && s.PropertyId == propertyId);
+
+        if (submission == null)
+            throw new InvalidOperationException($"Could not find submission for {signerEmail} and {propertyId}");
+
+        // Check if the signer exists
+        var signer = await _dbContext.Users
+                .FirstOrDefaultAsync(u => u.Email == signerEmail);
+
+        if (signer == null)
+            throw new InvalidOperationException($"Could not find signer for {signerEmail}");
+
+        // Get the property application
+        var application = await _dbContext.PropertyApplications
+                .FirstOrDefaultAsync(pa => pa.UserId == signer.Id && pa.PropertyId == propertyId);
+
+        if (application == null)
+            throw new InvalidOperationException($"Could not find application for {signerEmail} and {propertyId}");
+
+        submission.Status = payload.Status;
+        submission.OpenedAt = payload.OpenedAt;
+        submission.CompletedAt = payload.CompletedAt;
+        submission.SubmissionUrl = payload.SubmissionUrl;
+
+        application.IsRenting = true;
+        application.UpdatedAt = DateTime.UtcNow;
+
+        await _dbContext.SaveChangesAsync();
+    }
 }
