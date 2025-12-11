@@ -14,6 +14,7 @@ public class DocuSealController : ControllerBase
 {
     private readonly DocuSealService _docuSealService;
     private readonly PropertyService _propertyService;
+    private readonly PropertyApplicationsService _propertyApplicationsService;
     private readonly DocuSealSubmissionsService _docuSealSubmissionsService;
     private readonly ConfigService _config;
     private readonly ILogger<DocuSealController> _logger;
@@ -21,6 +22,7 @@ public class DocuSealController : ControllerBase
     public DocuSealController(
             DocuSealService docuSealService,
             PropertyService propertyService,
+            PropertyApplicationsService propertyApplicationsService,
             DocuSealSubmissionsService docuSealSubmissionsService,
             ConfigService config,
             ILogger<DocuSealController> logger
@@ -28,6 +30,7 @@ public class DocuSealController : ControllerBase
     {
         _docuSealService = docuSealService;
         _propertyService = propertyService;
+        _propertyApplicationsService = propertyApplicationsService;
         _docuSealSubmissionsService = docuSealSubmissionsService;
         _config = config;
         _logger = logger;
@@ -44,7 +47,7 @@ public class DocuSealController : ControllerBase
             _logger.LogError("Please setup a 'ProdEmail` environment variable with your registered DocuSeal email");
             return Conflict(new
             {
-                message = "No email detected"
+                message = "Unknown error occurred"
             });
         }
 
@@ -59,10 +62,12 @@ public class DocuSealController : ControllerBase
         {
             var tokenString = await _docuSealService.GetBuilderToken(adminEmail, currentUserId, propertyId, templateId);
             var owner = await _propertyService.GetPropertyOwner(Guid.Parse(propertyId));
+            var emailSent = await _propertyApplicationsService.EmailHasBeenSent(propertyId, signerEmail);
             return Ok(new
             {
                 token = tokenString,
                 signerEmail = signerEmail,
+                emailSent = emailSent,
                 ownerName = owner != null ? (owner?.FirstName + " " + owner?.LastName).Trim() : null
             });
         }

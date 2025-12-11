@@ -240,6 +240,7 @@ public class UsersService
 
     public async Task<PropertyApplication> SendRentPropertyRequest(Guid userId, Guid propertyId)
     {
+        // Check if the user exists
         var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.Id == userId);
         if (user == null)
         {
@@ -247,6 +248,7 @@ public class UsersService
             throw new UserNotFoundException($"User not found for ID: {userId}");
         }
 
+        // Check if the user has a government ID
         if (string.IsNullOrWhiteSpace(user.GovernmentIdNumber) ||
             string.IsNullOrWhiteSpace(user.GovernmentIdType))
         {
@@ -254,10 +256,11 @@ public class UsersService
             throw new ProfileNotFoundException("Please provide your Government ID number and Government ID type to proceed");
         }
 
-        var propertyExists = await _dbContext.PropertyListings
-            .AnyAsync(p => p.Id == propertyId);
+        // Check if the property exists
+        var property = await _dbContext.PropertyListings
+                .FirstOrDefaultAsync(p => p.Id == propertyId);
 
-        if (!propertyExists)
+        if (property == null)
             throw new ObjectNotFoundException($"Property {propertyId} not found");
 
         // Check for duplicate application
@@ -267,11 +270,15 @@ public class UsersService
         if (existingApplication)
             throw new InvalidOperationException("You have already applied to this property");
 
+        // Create a new application
         var application = new PropertyApplication
         {
             Id = Guid.NewGuid(),
             UserId = userId,
-            PropertyId = propertyId
+            PropertyId = propertyId,
+            RentAmount = property.Rent,
+            UpdatedAt = DateTime.UtcNow,
+            CreatedAt = DateTime.UtcNow,
         };
 
         _dbContext.PropertyApplications.Add(application);

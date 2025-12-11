@@ -33,26 +33,34 @@ public class DocuSealSubmissionsService
 
     public async Task<DocuSealSubmitterResponseDto> CreateSubmission(CreateSubmissionRequestDto dto, CancellationToken ct = default)
     {
+        // Check if the user already has a submission for this property
         var tenantUser = await _dbContext.Users
-            .FirstOrDefaultAsync(u => u.NormalizedEmail == dto.TenantEmail.ToUpper());
+                .FirstOrDefaultAsync(u => u.NormalizedEmail == dto.TenantEmail.ToUpper(), ct);
 
         if (tenantUser == null)
             throw new InvalidOperationException($"User not found for email: {dto.TenantEmail}");
 
+        // Check if the property has an agreement
         var property = await _dbContext.PropertyListings
-            .Include(p => p.Agreement)
-            .Include(p => p.Owner)
-            .FirstOrDefaultAsync(p => p.Id == dto.PropertyId);
+                .Include(p => p.Agreement)
+                .Include(p => p.Owner)
+                .FirstOrDefaultAsync(p => p.Id == dto.PropertyId, ct);
 
         if (property?.Agreement == null)
             throw new InvalidOperationException($"Could not fetch TemplateId value for property {dto.PropertyId}. Agreement is possibly not assigned");
 
+        // Check if the user has already sent an email
+        var application = await _dbContext.PropertyApplications
+                .FirstOrDefaultAsync(pa => pa.PropertyId == dto.PropertyId && pa.UserId == tenantUser.Id, ct);
+
+        if (application != null && application.HasSentEmail == true)
+            throw new InvalidOperationException($"You have already sent an invitation email to {dto.TenantEmail}");
+
+        // Create a new submission with docuseal api
         var client = new RestClient("https://api.docuseal.com");
         var request = new RestRequest("submissions", Method.Post);
-
         request.AddHeader("X-Auth-Token", _config.GetDocuSealAuthToken());
         request.AddHeader("content-type", "application/json");
-
         var body = new
         {
             template_id = property.Agreement.APITemplateId,
@@ -68,7 +76,6 @@ public class DocuSealSubmissionsService
                 }
             }
         };
-
         request.AddJsonBody(body);
 
         var response = await client.ExecuteAsync(request, ct);
@@ -90,6 +97,7 @@ public class DocuSealSubmissionsService
 
         var firstSubmitter = submitters[0];
 
+        // Create a new submission
         var newSubmission = new DocuSealSubmission
         {
             PropertyId = dto.PropertyId,
@@ -105,9 +113,6 @@ public class DocuSealSubmissionsService
 
         _dbContext.DocuSealSubmissions.Add(newSubmission);
 
-        var application = await _dbContext.PropertyApplications
-            .FirstOrDefaultAsync(pa => pa.PropertyId == dto.PropertyId && pa.UserId == tenantUser.Id, ct);
-
         if (application != null)
         {
             application.HasSentEmail = true;
@@ -115,6 +120,7 @@ public class DocuSealSubmissionsService
 
         await _dbContext.SaveChangesAsync(ct);
 
+        // Send an email to the tenant
         try
         {
             string frontendBaseUrl = _config.GetWebURL();
@@ -125,8 +131,8 @@ public class DocuSealSubmissionsService
 
             string emailSubject = "RentEZ Property: Lease Agreement Signing Invitation";
             string emailBody = $@"
-                <p>Hi there,</p></br>
-                <p>You have been invited to sign a lease document for property <strong>{propertyName}</strong> on RentEZ.</p></br>
+                <p>Hi there,</p>
+                <p>You have been invited to sign a lease document for property <strong>{propertyName}</strong> on RentEZ.</p><br/>
                 <p>
                     <a href=""{signingLink}"" style=""padding: 10px 20px; background-color: #007bff; color: white; text-decoration: none; border-radius: 5px;"">
                         Review and Sign
@@ -134,7 +140,6 @@ public class DocuSealSubmissionsService
                 </p>
                 <p>Or click here: <a href=""{signingLink}"">{signingLink}</a></p>
                 <p>Please contact us by replying to this email if you have any questions.</p>
-                <br/>
                 <p>Thanks,<br/>{(string.IsNullOrEmpty(sender) ? "RentEZ" : sender)}</p>
             ";
 
@@ -171,4 +176,5 @@ public class DocuSealSubmissionsService
                 })
                 .ToListAsync(ct);
     }
+
 }

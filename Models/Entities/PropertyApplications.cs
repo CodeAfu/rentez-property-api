@@ -10,7 +10,7 @@ public class PropertyApplication : IIdentifiable, ITimestampedEntity
     public Guid Id { get; set; }
 
     [Required]
-    public decimal RentAmount { get; set; }
+    public decimal RentAmount { get; set; } // For calculating owed amounts over the tenancy period
     // [Required]
     // public decimal RentPaid { get; set; }
 

@@ -124,6 +124,16 @@ public class PropertyApplicationsService
         return applications.Select(MapToResponse).ToList();
     }
 
+    public async Task<bool> EmailHasBeenSent(string propertyId, string? signerEmail)
+    {
+        if (signerEmail == null) return false;
+        return await _dbContext.PropertyApplications
+                .AsNoTracking()
+                .Where(s => s.PropertyId == Guid.Parse(propertyId) && s.User.NormalizedEmail == signerEmail.ToUpper())
+                .Select(s => s.HasSentEmail)
+                .FirstOrDefaultAsync();
+    }
+
     private async Task<PropertyApplicationResponse> GetApplicationResponse(Guid id)
     {
         var application = await _dbContext.PropertyApplications
