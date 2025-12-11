@@ -62,7 +62,7 @@ public class DocuSealController : ControllerBase
         {
             var tokenString = await _docuSealService.GetBuilderToken(adminEmail, currentUserId, propertyId, templateId);
             var owner = await _propertyService.GetPropertyOwner(Guid.Parse(propertyId));
-            var emailSent = await _propertyApplicationsService.EmailHasBeenSent(propertyId, signerEmail);
+            var emailSent = await _docuSealSubmissionsService.GetSubmissionByPropertyIdAndEmail(propertyId, signerEmail) != null;
             return Ok(new
             {
                 token = tokenString,

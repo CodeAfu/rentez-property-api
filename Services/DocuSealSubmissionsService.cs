@@ -56,9 +56,6 @@ public class DocuSealSubmissionsService
         if (application == null)
             throw new InvalidOperationException($"Could not find application for {dto.TenantEmail} and {dto.PropertyId}");
 
-        if (application.HasSentEmail == true)
-            throw new InvalidOperationException($"You have already sent an invitation email to {dto.TenantEmail}");
-
         // Create a new submission with docuseal api
         var client = new RestClient("https://api.docuseal.com");
         var request = new RestRequest("submissions", Method.Post);
@@ -136,7 +133,7 @@ public class DocuSealSubmissionsService
             string emailSubject = "RentEZ Property: Lease Agreement Signing Invitation";
             string emailBody = $@"
                 <p>Hi there,</p>
-                <p>You have been invited to sign a lease document for property <strong>{propertyName}</strong> on RentEZ.</p><br/>
+                <p>You have been invited to sign a lease document for property <strong>{propertyName}</strong> on RentEZ.</p>
                 <p>
                     <a href=""{signingLink}"" style=""padding: 10px 20px; background-color: #007bff; color: white; text-decoration: none; border-radius: 5px;"">
                         Review and Sign
@@ -213,5 +210,11 @@ public class DocuSealSubmissionsService
         application.UpdatedAt = DateTime.UtcNow;
 
         await _dbContext.SaveChangesAsync();
+    }
+
+    public async Task<DocuSealSubmission?> GetSubmissionByPropertyIdAndEmail(string propertyId, string? signerEmail)
+    {
+        return await _dbContext.DocuSealSubmissions
+                .FirstOrDefaultAsync(s => s.Email == signerEmail && s.PropertyId == Guid.Parse(propertyId));
     }
 }
