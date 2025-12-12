@@ -344,6 +344,30 @@ public class DocuSealController : ControllerBase
         }
     }
 
+    [HttpGet("submissions/get-by-email-propId/{submitterEmail}/{propertyId}")]
+    [Authorize(AuthenticationSchemes = "Bearer", Policy = "UserOrAdmin")]
+    public async Task<ActionResult> GetSubmissionsByTemplateId(string submitterEmail, Guid propertyId)
+    {
+        try
+        {
+            var result = await _docuSealSubmissionsService.GetSubmissionByEmailPropId(submitterEmail, propertyId);
+            return Ok(result);
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogError(ex, "Operation error");
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unknown error occurred");
+            return StatusCode(500, new
+            {
+                message = "Unknown error occurred. See logs for more information"
+            });
+        }
+    }
+
     [HttpPost("submissions/sign-lease")]
     [Authorize(AuthenticationSchemes = "Bearer", Policy = "UserOrAdmin")]
     public async Task<ActionResult> SignLease([FromQuery] string signerEmail, [FromQuery] Guid propertyId, [FromBody] DocuSealLeaseSubmissionRequestDto payload)
