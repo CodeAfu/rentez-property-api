@@ -178,6 +178,32 @@ public class DocuSealSubmissionsService
                 .ToListAsync(ct);
     }
 
+    public async Task<GetDocuSealSubmissionDto?> GetSubmissionByEmailPropId(string submitterEmail, Guid propertyId, CancellationToken ct = default)
+    {
+        return await _dbContext.DocuSealSubmissions
+                .AsNoTracking()
+                .Where(s => s.Email == submitterEmail && s.PropertyId == propertyId)
+                .Select(s => new GetDocuSealSubmissionDto
+                {
+                    Id = s.Id,
+                    APISubmissionId = s.APISubmissionId,
+                    Email = s.Email,
+                    Status = s.Status,
+                    Role = s.Role,
+                    SignerSlug = s.SignerSlug,
+                    SubmissionUrl = s.SubmissionUrl,
+                    PropertyId = s.PropertyId,
+                    SignerId = s.SignerId,
+                    OpenedAt = s.OpenedAt,
+                    CompletedAt = s.CompletedAt,
+                    DeclinedAt = s.DeclinedAt,
+                    CreatedAt = s.CreatedAt,
+                    UpdatedAt = s.UpdatedAt
+                })
+                .FirstOrDefaultAsync();
+    }
+
+
     public async Task SignLease(string signerEmail, Guid propertyId, DocuSealLeaseSubmissionRequestDto payload)
     {
         // Check if the submission exists

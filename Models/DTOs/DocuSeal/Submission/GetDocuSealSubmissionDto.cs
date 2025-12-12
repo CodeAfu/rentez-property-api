@@ -9,6 +9,7 @@ public class GetDocuSealSubmissionDto
     public string? Status { get; set; }
     public string? Role { get; set; }
     public string? SignerSlug { get; set; }
+    public string? SubmissionUrl { get; set; }
 
     public Guid PropertyId { get; set; }
     public Guid SignerId { get; set; }
