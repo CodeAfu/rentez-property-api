@@ -295,3 +295,4 @@ backup.rar
 appsettings.Production.json
 appsettings.json
 secrets.txt
+.env
