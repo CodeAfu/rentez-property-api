@@ -20,11 +20,22 @@ var jsonOptions = new JsonSerializerOptions
 
 var allowedOrigins = builder.Configuration.GetSection("AllowedOrigins").Get<string[]>();
 
+// builder.Services.AddCors(options =>
+// {
+//     options.AddPolicy("AllowNextJS", policy =>
+//     {
+//         policy.WithOrigins(allowedOrigins ?? Array.Empty<string>())
+//               .AllowAnyHeader()
+//               .AllowAnyMethod()
+//               .AllowCredentials();
+//     });
+// });
+
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowNextJS", policy =>
+    options.AddPolicy("AllowAllWithCookies", policy =>
     {
-        policy.WithOrigins(allowedOrigins ?? Array.Empty<string>())
+        policy.SetIsOriginAllowed(origin => true)
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials();
@@ -191,7 +202,8 @@ if (app.Environment.IsDevelopment())
     app.MapScalarApiReference();
 }
 
-app.UseCors("AllowNextJS");
+// app.UseCors("AllowNextJS");
+app.UseCors("AllowAllWithCookies");
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
