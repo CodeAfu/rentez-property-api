@@ -5,6 +5,7 @@ using RentEZApi.Services;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
 using RentEZApi.Attributes;
+using RentEZApi.Models.DTOs.SNS;
 
 namespace RentEZApi.Controllers;
 
@@ -14,14 +15,16 @@ public class UsersController : ControllerBase
 {
     private readonly UsersService _userService;
     private readonly ConfigService _configService;
+    private readonly LambdaSnsAlertService _alertService;
     private readonly string unknownErrorMessage = "Unknown error occurred";
     private readonly ILogger<UsersController> _logger;
 
-    public UsersController(UsersService userService, ConfigService configService, ILogger<UsersController> logger)
+    public UsersController(UsersService userService, ConfigService configService, ILogger<UsersController> logger, LambdaSnsAlertService alertService)
     {
         _userService = userService;
         _configService = configService;
         _logger = logger;
+        _alertService = alertService;
     }
 
     [HttpGet]
@@ -255,5 +258,13 @@ public class UsersController : ControllerBase
             _logger.LogError(ex.Message, "Error creating applicant profile");
             return StatusCode(500, new { message = "Something went wrong" });
         }
+    }
+
+    [HttpPost("subscribe")]
+    [Authorize(AuthenticationSchemes = "Bearer", Policy = "UserOrAdmin")]
+    public async Task<IActionResult> Subscribe([FromBody] SubscribeRequest request)
+    {
+        await _alertService.SubscribeToAlerts(request.Email);
+        return Ok(new { message = "Confirmation email sent" });
     }
 }

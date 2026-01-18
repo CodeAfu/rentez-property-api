@@ -43,6 +43,15 @@ public class ConfigService
     // Optional: Returns string? (nullable)
     public string? GetTestEmail() => _config["TestEmail"];
 
+    // public string GetSubscribeLambdaUrl() =>
+    //     _config["AWS:Lambda:SubscribeFunctionUrl"] ?? throw new InvalidOperationException("Subscribe Lambda URL is missing");
+    //
+    // public string GetNotifyLambdaUrl() =>
+    //     _config["AWS:Lambda:NotifyFunctionUrl"] ?? throw new InvalidOperationException("Notify Lambda URL is missing");
+    //
+    // public string GetUnsubscribeLambdaUrl() =>
+    //     _config["AWS:Lambda:UnsubscribeFunctionUrl"] ?? throw new InvalidOperationException("Unsubscribe Lambda URL is missing");
+
     public JwtInfo GetJwtInfo()
     {
         var tokenValidityMins = int.Parse(_config["Jwt:TokenValidityMins"]

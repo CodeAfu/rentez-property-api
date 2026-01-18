@@ -29,6 +29,8 @@ public class User : IdentityUser<Guid>, IIdentifiable, ITimestampedEntity
     [MaxLength(50)]
     public string Ethnicity { get; set; } = string.Empty;
 
+    public bool IsSubscribedToNotifications { get; set; } = false;
+
     // Application Profile
     public decimal? MonthlyIncome { get; set; }
     public string? EmployerName { get; set; } = string.Empty;

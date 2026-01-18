@@ -15,13 +15,15 @@ public class PropertyController : ControllerBase
 {
     private readonly ConfigService _config;
     private readonly PropertyService _propertyService;
+    private readonly LambdaSnsAlertService _alertService;
     private readonly string unknownErrorMessage = "Unknown error occurred";
     private readonly ILogger<PropertyController> _logger;
 
-    public PropertyController(ConfigService config, PropertyService propertyService, ILogger<PropertyController> logger)
+    public PropertyController(ConfigService config, PropertyService propertyService, ILogger<PropertyController> logger, LambdaSnsAlertService alertService)
     {
         _config = config;
         _propertyService = propertyService;
+        _alertService = alertService;
         _logger = logger;
     }
 
@@ -112,6 +114,9 @@ public class PropertyController : ControllerBase
             });
             var currentUserId = Guid.Parse(userIdClaim);
             var property = await _propertyService.CreateAsync(dto, currentUserId);
+
+            await _alertService.NotifyNewProperty(property);
+
             return CreatedAtAction(
                         nameof(GetProperty),
                         new { id = property.Id },

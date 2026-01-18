@@ -188,6 +188,7 @@ builder.Services.AddScoped<PropertyApplicationsService>();
 builder.Services.AddScoped<DocuSealService>();
 builder.Services.AddScoped<DocuSealSubmissionsService>();
 builder.Services.AddScoped<EmailService>();
+builder.Services.AddScoped<LambdaSnsAlertService>();
 
 builder.Services.AddLogging();
 

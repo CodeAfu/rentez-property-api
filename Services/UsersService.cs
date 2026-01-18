@@ -62,6 +62,37 @@ public class UsersService
                 })
                 .FirstOrDefaultAsync();
 
+    public async Task<SelectUserDto?> GetUserByEmailAsync(string email)
+            => await _dbContext.Users
+                .Where(u => u.Email!.ToLower() == email.ToLower())
+                .Select(u => new SelectUserDto
+                {
+                    Id = u.Id,
+                    FirstName = u.FirstName,
+                    LastName = u.LastName,
+                    DateOfBirth = u.DateOfBirth,
+                    Ethnicity = u.Ethnicity,
+                    Occupation = u.Occupation,
+                    Email = u.Email!,
+                    MonthlyIncome = u.MonthlyIncome,
+                    EmployerName = u.EmployerName,
+                    GovernmentIdType = u.GovernmentIdType,
+                    GovernmentIdNumber = u.GovernmentIdNumber,
+                    NumberOfOccupants = u.NumberOfOccupants,
+                    HasPets = u.HasPets,
+                    PetDetails = u.PetDetails,
+                    OwnedProperty = u.OwnedProperty.Select(p => new PropertySummaryDto
+                    {
+                        Title = p.Title,
+                        Description = p.Description!,
+                        Address = p.Address,
+                        City = p.City,
+                        State = p.State,
+                        Rent = p.Rent,
+                    }).ToList()
+                })
+                .FirstOrDefaultAsync();
+
     public async Task<ICollection<Property>> GetUserProperties(Guid id)
     {
         var user = await _dbContext.Users
