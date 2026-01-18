@@ -42,7 +42,7 @@ public class UploadController : ControllerBase
             // Validate file type
             var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".webp" };
             var fileExtension = Path.GetExtension(request.FileName).ToLower();
-            
+
             if (!allowedExtensions.Contains(fileExtension))
             {
                 return BadRequest(new { message = "Invalid file type. Only images are allowed." });

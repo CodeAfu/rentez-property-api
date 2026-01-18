@@ -27,6 +27,7 @@ public class LambdaSnsAlertService
         if (user == null)
             _logger.LogError("User not found for email {Email}", email);
 
+        _logger.LogInformation("Initiating subscription for {Email}", email);
         var payload = new { email };
         var content = new StringContent(
             JsonSerializer.Serialize(payload),
@@ -53,6 +54,7 @@ public class LambdaSnsAlertService
         if (user == null)
             _logger.LogError("User not found for email {Email}", email);
 
+        _logger.LogInformation("Initiating unsubscription for {Email}", email);
         try
         {
             var payload = new { email };
@@ -95,6 +97,7 @@ public class LambdaSnsAlertService
             }
         };
 
+        _logger.LogInformation("Notifying subscribers about property {PropertyId}", property.Id);
         var content = new StringContent(
             JsonSerializer.Serialize(payload),
             Encoding.UTF8,
